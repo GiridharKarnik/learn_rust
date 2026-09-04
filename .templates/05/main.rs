@@ -57,6 +57,13 @@
 // Derive: Debug, Clone, PartialEq
 
 // Your code here
+#[derive(Debug, Clone, PartialEq)]
+enum TrainType {
+    Express,
+    Superfast,
+    Clone,
+    PartialEq,
+}
 
 // =============================================
 // TODO 2: Implement methods on `TrainType`
@@ -184,12 +191,9 @@ impl TrainStatus {
 
 impl Train {
     fn new(name: &str, number: u32, train_type: TrainType, status: TrainStatus) -> Self {
-        Train {
-            name: name.to_string(),
-            number,
-            train_type,
-            status,
-        }
+        // TODO: create and return a Train with these fields
+        // Hint: convert name to String with .to_string()
+        todo!()
     }
 
     fn display(&self) {
