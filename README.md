@@ -29,7 +29,7 @@ XX-lesson-name/
 | 02β | `02-bonus-loops-practice` | Loops Practice (bonus) |
 | 03  | `03-ownership-and-borrowing` | Ownership & Borrowing |
 | 04  | `04-structs-and-methods` | Structs & Methods |
-| 05  | *Coming soon* | Enums & Pattern Matching |
+| 05  | `05-enums-and-pattern-matching` | Enums & Pattern Matching |
 | 06  | *Coming soon* | Collections |
 | 07  | *Coming soon* | Error Handling |
 | 08  | *Coming soon* | Traits & Generics |
