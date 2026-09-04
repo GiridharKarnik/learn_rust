@@ -1,366 +1,219 @@
 // =============================================
-// EXERCISE 05: Train Status Dashboard
+// EXERCISE 05: Station Announcement System
 // =============================================
 //
-// Build a train status dashboard using enums and pattern matching.
-// Complete all the TODOs so the program compiles and produces the expected output.
+// You're building the automated announcement system for Chennai Central station.
+// Different events need different announcements with different urgency levels.
 //
 // Run with: cargo run
 //
 // Expected output:
 //
-//   === TRAIN STATUS DASHBOARD ===
+//   === CHENNAI CENTRAL ANNOUNCEMENTS ===
 //
-//   --- All Trains ---
-//   🟢 Rajdhani Express (#12301) [Express] - On time
-//   🟡 Shatabdi Express (#12007) [Superfast] - Delayed by 45 minutes: Signal failure at junction
-//   🔴 Chennai Express (#12163) [Superfast] - Cancelled: Track maintenance
-//   🔵 Nilgiri Express (#12671) [Passenger] - Arrived at platform 3
-//   🚂 Mumbai Local (#90123) [Local] - Departed, next station: Dadar
-//   🟡 Garib Rath (#12578) [Express] - Delayed by 15 minutes: Waiting for connecting train
-//   🟢 Goods Special (#99001) [Freight] - On time
-//   🟡 Duronto Express (#12245) [Superfast] - Delayed by 90 minutes: Heavy rainfall
+//   --- All Announcements ---
+//   🟢 [INFO] Rajdhani Express to New Delhi departing from platform 3
+//   🟢 [INFO] Shatabdi Express from Bangalore arriving at platform 7
+//   🟠 [URGENT] Duronto Express delayed by 45 min — Signal failure near Katpadi
+//   🔴 [CRITICAL] CANCELLED: Nilgiri Express — Landslide on mountain track
+//   🟠 [URGENT] Garib Rath: platform changed from 5 to 2
+//   🟢 [INFO] Kovai Express to Coimbatore departing from platform 12
+//   🔴 [CRITICAL] CANCELLED: Island Express — Flooding in Kerala
+//   🟡 [MINOR] Mumbai Mail delayed by 10 min — Late arrival of incoming rake
 //
-//   --- Train Type Info ---
-//   Express: max speed 160 km/h, priority 1
-//   Superfast: max speed 130 km/h, priority 2
-//   Passenger: max speed 110 km/h, priority 3
-//   Local: max speed 80 km/h, priority 4
-//   Freight: max speed 60 km/h, priority 5
+//   --- Urgent & Critical Only ---
+//   🟠 [URGENT] Duronto Express delayed by 45 min — Signal failure near Katpadi
+//   🔴 [CRITICAL] CANCELLED: Nilgiri Express — Landslide on mountain track
+//   🟠 [URGENT] Garib Rath: platform changed from 5 to 2
+//   🔴 [CRITICAL] CANCELLED: Island Express — Flooding in Kerala
 //
-//   --- Running Trains ---
-//   🟢 Rajdhani Express (#12301) is running
-//   🟡 Shatabdi Express (#12007) is running
-//   🚂 Mumbai Local (#90123) is running
-//   🟡 Garib Rath (#12578) is running
-//   🟢 Goods Special (#99001) is running
-//   🟡 Duronto Express (#12245) is running
-//
-//   --- Trains Delayed Over 30 Minutes ---
-//   🟡 Shatabdi Express (#12007) [Superfast] - Delayed by 45 minutes: Signal failure at junction
-//   🟡 Duronto Express (#12245) [Superfast] - Delayed by 90 minutes: Heavy rainfall
-//
-//   --- Status Summary ---
-//   On Time: 2
-//   Delayed: 3
-//   Cancelled: 1
-//   Arrived: 1
-//   Departed: 1
+//   --- Event Summary ---
+//   Departures: 2
+//   Arrivals: 1
+//   Delays: 2
+//   Cancellations: 2
+//   Platform changes: 1
+//   Total: 8
 
 // =============================================
-// TODO 1: Define the `TrainType` enum
+// TODO 1: Define the `Urgency` enum and its method
 // =============================================
 //
-// Variants (no associated data):
-//   Express, Superfast, Passenger, Local, Freight
+// Variants: Info, Minor, Urgent, Critical
 //
 // Derive: Debug, Clone, PartialEq
-
-// Your code here
-#[derive(Debug, Clone, PartialEq)]
-enum TrainType {
-    Express,
-    Superfast,
-    Clone,
-    PartialEq,
-}
-
-// =============================================
-// TODO 2: Implement methods on `TrainType`
-// =============================================
 //
-// Use `match` on `self` for each method.
+// Then implement ONE method:
 //
-// - fn display_name(&self) -> &str
-//     Express → "Express", Superfast → "Superfast",
-//     Passenger → "Passenger", Local → "Local", Freight → "Freight"
+//   fn prefix(&self) -> &str
+//     Returns a colored tag used at the start of each announcement:
+//       Info     → "🟢 [INFO]"
+//       Minor    → "🟡 [MINOR]"
+//       Urgent   → "🟠 [URGENT]"
+//       Critical → "🔴 [CRITICAL]"
 //
-// - fn max_speed(&self) -> u32
-//     Express: 160, Superfast: 130, Passenger: 110, Local: 80, Freight: 60
-//
-// - fn priority(&self) -> u8
-//     Express: 1, Superfast: 2, Passenger: 3, Local: 4, Freight: 5
-
-impl TrainType {
-    fn display_name(&self) -> &str {
-        // TODO: match on self and return the display name
-        ""
-    }
-
-    fn max_speed(&self) -> u32 {
-        // TODO: match on self and return the max speed
-        0
-    }
-
-    fn priority(&self) -> u8 {
-        // TODO: match on self and return the priority
-        0
-    }
-}
+// WHY: Every announcement needs a visual urgency tag.
+//      This is how `match` works on simple enums — variant in, value out.
 
 // =============================================
-// TODO 3: Define the `TrainStatus` enum
+// TODO 2: Define the `Event` enum (with data!)
 // =============================================
 //
-// This enum has DATA attached to its variants!
+// Each variant carries the data specific to that event type.
+// Notice how different events need different information:
 //
-// Variants:
-//   - OnTime                                  ← unit variant (no data)
-//   - Delayed { minutes: u32, reason: String } ← struct-like
-//   - Cancelled { reason: String }            ← struct-like
-//   - Arrived { platform: u8 }                ← struct-like
-//   - Departed { next_station: String }       ← struct-like
+//   Departure { train: String, platform: u8, destination: String }
+//   Arrival { train: String, platform: u8, origin: String }
+//   Delay { train: String, minutes: u32, reason: String }
+//   Cancellation { train: String, reason: String }
+//   PlatformChange { train: String, old_platform: u8, new_platform: u8 }
 //
 // Derive: Debug, Clone
-
-// Your code here
+//
+// WHY: This is the core of "enums with data" — each variant has a
+//      different shape. A Departure has a destination but no reason.
+//      A Cancellation has a reason but no platform. Rust enforces that
+//      you handle each shape correctly.
 
 // =============================================
-// TODO 4: Implement methods on `TrainStatus`
+// TODO 3: Implement `Event` methods
 // =============================================
 //
-// - fn emoji(&self) -> &str
-//     OnTime → "🟢", Delayed → "🟡", Cancelled → "🔴",
-//     Arrived → "🔵", Departed → "🚂"
+// Three methods, each exercises a different match skill:
 //
-// - fn description(&self) -> String
-//     OnTime                       → "On time"
-//     Delayed { minutes, reason }  → "Delayed by {minutes} minutes: {reason}"
-//     Cancelled { reason }         → "Cancelled: {reason}"
-//     Arrived { platform }         → "Arrived at platform {platform}"
-//     Departed { next_station }    → "Departed, next station: {next_station}"
+// (a) fn urgency(&self) -> Urgency
+//     Decides how urgent this event is. Rules:
+//       Cancellation                      → Critical
+//       Delay where minutes > 30          → Urgent    ← match guard!
+//       Delay where minutes <= 30         → Minor
+//       PlatformChange                    → Urgent
+//       Departure, Arrival                → Info
 //
-//   Hint: use format!() for variants with data, String::from() for OnTime.
+//     WHY: This exercises match GUARDS — the same variant (Delay)
+//          maps to different urgencies based on the data inside it.
 //
-// - fn is_running(&self) -> bool
-//     true for: OnTime, Delayed, Departed
-//     false for: Cancelled, Arrived
+// (b) fn announce(&self) -> String
+//     Generates the announcement text. Each variant formats differently:
+//       Departure       → "{train} to {destination} departing from platform {platform}"
+//       Arrival         → "{train} from {origin} arriving at platform {platform}"
+//       Delay           → "{train} delayed by {minutes} min — {reason}"
+//       Cancellation    → "CANCELLED: {train} — {reason}"
+//       PlatformChange  → "{train}: platform changed from {old_platform} to {new_platform}"
 //
-//   Hint: you can combine patterns with | like:
-//     TrainStatus::OnTime | TrainStatus::Delayed { .. } => true,
-
-impl TrainStatus {
-    fn emoji(&self) -> &str {
-        // TODO: match on self and return the emoji
-        ""
-    }
-
-    fn description(&self) -> String {
-        // TODO: match on self, extract data, return formatted description
-        String::new()
-    }
-
-    fn is_running(&self) -> bool {
-        // TODO: match on self, return true for running states
-        false
-    }
-}
+//     WHY: This exercises DESTRUCTURING — pulling data out of each
+//          variant and using it to build a string.
+//
+// (c) fn train_name(&self) -> &str
+//     Returns the train name from any event. Every variant has a `train` field.
+//       Hint: match on self, extract `train` in each arm, return train.
+//             You can combine arms with | if the field name is the same.
+//
+//     WHY: Sometimes you need the same field from every variant.
+//          This shows that you always have to match even when every
+//          arm does the same thing.
 
 // =============================================
-// TODO 5: Define the `Train` struct
+// TODO 4: Define `AnnouncementBoard` struct and methods
 // =============================================
 //
 // Fields:
-//   - name: String
-//   - number: u32
-//   - train_type: TrainType
-//   - status: TrainStatus
+//   station: String
+//   events: Vec<Event>
 //
 // Derive: Debug
-
-// Your code here
-
-// =============================================
-// TODO 6: Implement methods on `Train`
-// =============================================
 //
-// Associated function:
-//   - fn new(name: &str, number: u32, train_type: TrainType, status: TrainStatus) -> Self
-//     Convert name to String using .to_string()
+// Implement these methods:
 //
-// Methods:
-//   - fn display(&self)
-//     Print one line:
-//       {emoji} {name} (#{number}) [{type_name}] - {description}
-//     Example:
-//       🟢 Rajdhani Express (#12301) [Express] - On time
+//   fn new(station: &str) -> Self
+//     Creates a board with an empty events Vec.
 //
-//   - fn is_delayed_over(&self, threshold: u32) -> bool
-//     Returns true ONLY if status is Delayed AND minutes > threshold.
-//     Use match on &self.status. For all other variants, return false.
-
-impl Train {
-    fn new(name: &str, number: u32, train_type: TrainType, status: TrainStatus) -> Self {
-        // TODO: create and return a Train with these fields
-        // Hint: convert name to String with .to_string()
-        todo!()
-    }
-
-    fn display(&self) {
-        // TODO: print formatted train info using emoji(), display_name(), description()
-        // Format: "{emoji} {name} (#{number}) [{type_name}] - {description}"
-    }
-
-    fn is_delayed_over(&self, threshold: u32) -> bool {
-        // TODO: match on &self.status
-        // If Delayed { minutes, .. } and *minutes > threshold → true
-        // All other variants → false
-        false
-    }
-}
-
-// =============================================
-// TODO 7: Implement `count_by_status`
-// =============================================
+//   fn add(&mut self, event: Event)
+//     Pushes an event onto the Vec.
 //
-// fn count_by_status(trains: &[Train])
+//   fn display_all(&self)
+//     Prints "--- All Announcements ---"
+//     Then for each event, prints one line:
+//       "{urgency_prefix} {announcement}"
+//     Example: "🔴 [CRITICAL] CANCELLED: Nilgiri Express — Landslide"
 //
-// Loop through all trains, count how many are in each status category.
-// Use `match` on &train.status (borrow to avoid moving).
+//   fn display_urgent(&self)
+//     Prints "--- Urgent & Critical Only ---"
+//     Same format, but only prints events where urgency is Urgent or Critical.
+//     Hint: compare with == (that's why Urgency derives PartialEq)
 //
-// Print:
-//   --- Status Summary ---
-//   On Time: 2
-//   Delayed: 3
-//   Cancelled: 1
-//   Arrived: 1
-//   Departed: 1
+//   fn summary(&self)
+//     Counts how many of each event type using match, then prints:
+//       --- Event Summary ---
+//       Departures: 2
+//       Arrivals: 1
+//       Delays: 2
+//       Cancellations: 2
+//       Platform changes: 1
+//       Total: 8
 //
-// Hint: use `..` to ignore fields in struct-like variants:
-//   TrainStatus::Delayed { .. } => delayed += 1,
-
-fn count_by_status(trains: &[Train]) {
-    // TODO: count trains in each status category and print the summary
-}
-
-// =============================================
-// TODO 8: Implement `print_delayed_trains`
-// =============================================
-//
-// fn print_delayed_trains(trains: &[Train], min_delay: u32)
-//
-// Print a header: "--- Trains Delayed Over {min_delay} Minutes ---"
-// Then loop through trains, and for each train where
-// is_delayed_over(min_delay) is true, call train.display().
-
-fn print_delayed_trains(trains: &[Train], min_delay: u32) {
-    // TODO: print header, then display each train delayed over min_delay minutes
-}
+//     Hint: use `..` to ignore fields: Event::Departure { .. } => departures += 1,
 
 // =============================================
 // main() — DO NOT EDIT BELOW THIS LINE
 // =============================================
 
 fn main() {
-    println!("=== TRAIN STATUS DASHBOARD ===");
+    println!("=== CHENNAI CENTRAL ANNOUNCEMENTS ===");
 
-    // --- Create trains ---
-    let trains = vec![
-        Train::new(
-            "Rajdhani Express",
-            12301,
-            TrainType::Express,
-            TrainStatus::OnTime,
-        ),
-        Train::new(
-            "Shatabdi Express",
-            12007,
-            TrainType::Superfast,
-            TrainStatus::Delayed {
-                minutes: 45,
-                reason: String::from("Signal failure at junction"),
-            },
-        ),
-        Train::new(
-            "Chennai Express",
-            12163,
-            TrainType::Superfast,
-            TrainStatus::Cancelled {
-                reason: String::from("Track maintenance"),
-            },
-        ),
-        Train::new(
-            "Nilgiri Express",
-            12671,
-            TrainType::Passenger,
-            TrainStatus::Arrived { platform: 3 },
-        ),
-        Train::new(
-            "Mumbai Local",
-            90123,
-            TrainType::Local,
-            TrainStatus::Departed {
-                next_station: String::from("Dadar"),
-            },
-        ),
-        Train::new(
-            "Garib Rath",
-            12578,
-            TrainType::Express,
-            TrainStatus::Delayed {
-                minutes: 15,
-                reason: String::from("Waiting for connecting train"),
-            },
-        ),
-        Train::new(
-            "Goods Special",
-            99001,
-            TrainType::Freight,
-            TrainStatus::OnTime,
-        ),
-        Train::new(
-            "Duronto Express",
-            12245,
-            TrainType::Superfast,
-            TrainStatus::Delayed {
-                minutes: 90,
-                reason: String::from("Heavy rainfall"),
-            },
-        ),
-    ];
+    let mut board = AnnouncementBoard::new("Chennai Central");
 
-    // --- Display all trains ---
-    println!("\n--- All Trains ---");
-    for train in &trains {
-        train.display();
-    }
+    board.add(Event::Departure {
+        train: String::from("Rajdhani Express"),
+        platform: 3,
+        destination: String::from("New Delhi"),
+    });
 
-    // --- Train type info ---
-    println!("\n--- Train Type Info ---");
-    let types = [
-        TrainType::Express,
-        TrainType::Superfast,
-        TrainType::Passenger,
-        TrainType::Local,
-        TrainType::Freight,
-    ];
-    for t in &types {
-        println!(
-            "{}: max speed {} km/h, priority {}",
-            t.display_name(),
-            t.max_speed(),
-            t.priority()
-        );
-    }
+    board.add(Event::Arrival {
+        train: String::from("Shatabdi Express"),
+        platform: 7,
+        origin: String::from("Bangalore"),
+    });
 
-    // --- Running trains ---
-    println!("\n--- Running Trains ---");
-    for train in &trains {
-        if train.status.is_running() {
-            println!(
-                "{} {} (#{}) is running",
-                train.status.emoji(),
-                train.name,
-                train.number
-            );
-        }
-    }
+    board.add(Event::Delay {
+        train: String::from("Duronto Express"),
+        minutes: 45,
+        reason: String::from("Signal failure near Katpadi"),
+    });
 
-    // --- Delayed trains ---
+    board.add(Event::Cancellation {
+        train: String::from("Nilgiri Express"),
+        reason: String::from("Landslide on mountain track"),
+    });
+
+    board.add(Event::PlatformChange {
+        train: String::from("Garib Rath"),
+        old_platform: 5,
+        new_platform: 2,
+    });
+
+    board.add(Event::Departure {
+        train: String::from("Kovai Express"),
+        platform: 12,
+        destination: String::from("Coimbatore"),
+    });
+
+    board.add(Event::Cancellation {
+        train: String::from("Island Express"),
+        reason: String::from("Flooding in Kerala"),
+    });
+
+    board.add(Event::Delay {
+        train: String::from("Mumbai Mail"),
+        minutes: 10,
+        reason: String::from("Late arrival of incoming rake"),
+    });
+
     println!();
-    print_delayed_trains(&trains, 30);
+    board.display_all();
 
-    // --- Status summary ---
     println!();
-    count_by_status(&trains);
+    board.display_urgent();
+
+    println!();
+    board.summary();
 }
