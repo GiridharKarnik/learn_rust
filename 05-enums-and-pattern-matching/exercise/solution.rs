@@ -1,196 +1,173 @@
 // ============================================================================
-// LESSON 05 EXERCISE — SOLUTION: Railway Event Processing System
+// LESSON 05 EXERCISE — SOLUTION: Train Status Dashboard
 // ============================================================================
 
-// TODO 1: Define the `CoachClass` enum
+// TODO 1: Define the `TrainType` enum
 #[derive(Debug, Clone, PartialEq)]
-enum CoachClass {
-    FirstAC,
-    SecondAC,
-    ThirdAC,
-    Sleeper,
-    General,
+enum TrainType {
+    Express,
+    Superfast,
+    Passenger,
+    Local,
+    Freight,
 }
 
-// TODO 2: Implement methods on `CoachClass`
-impl CoachClass {
-    fn price_per_km(&self) -> f64 {
-        match self {
-            CoachClass::FirstAC => 4.50,
-            CoachClass::SecondAC => 2.75,
-            CoachClass::ThirdAC => 1.80,
-            CoachClass::Sleeper => 0.75,
-            CoachClass::General => 0.45,
-        }
-    }
-
+// TODO 2: Implement methods on `TrainType`
+impl TrainType {
     fn display_name(&self) -> &str {
         match self {
-            CoachClass::FirstAC => "First AC",
-            CoachClass::SecondAC => "Second AC",
-            CoachClass::ThirdAC => "Third AC",
-            CoachClass::Sleeper => "Sleeper",
-            CoachClass::General => "General",
+            TrainType::Express => "Express",
+            TrainType::Superfast => "Superfast",
+            TrainType::Passenger => "Passenger",
+            TrainType::Local => "Local",
+            TrainType::Freight => "Freight",
         }
     }
-}
 
-// TODO 3: Define the `BookingStatus` enum (with associated data!)
-#[derive(Debug, Clone)]
-enum BookingStatus {
-    Confirmed { coach: String, seat: u32 },
-    Waitlisted(u32),
-    Cancelled { refund_amount: f64 },
-    RAC(u32),
-}
-
-// TODO 4: Implement methods on `BookingStatus`
-impl BookingStatus {
-    fn description(&self) -> String {
+    fn max_speed(&self) -> u32 {
         match self {
-            BookingStatus::Confirmed { coach, seat } => {
-                format!("Confirmed \u{2014} Coach {}, Seat {}", coach, seat)
-            }
-            BookingStatus::Waitlisted(pos) => {
-                format!("Waitlisted \u{2014} Position {}", pos)
-            }
-            BookingStatus::Cancelled { refund_amount } => {
-                format!("Cancelled \u{2014} Refund \u{20b9}{:.2}", refund_amount)
-            }
-            BookingStatus::RAC(seat) => {
-                format!("RAC \u{2014} Seat {}", seat)
-            }
+            TrainType::Express => 160,
+            TrainType::Superfast => 130,
+            TrainType::Passenger => 110,
+            TrainType::Local => 80,
+            TrainType::Freight => 60,
         }
     }
 
-    fn is_confirmed(&self) -> bool {
-        matches!(self, BookingStatus::Confirmed { .. })
+    fn priority(&self) -> u8 {
+        match self {
+            TrainType::Express => 1,
+            TrainType::Superfast => 2,
+            TrainType::Passenger => 3,
+            TrainType::Local => 4,
+            TrainType::Freight => 5,
+        }
     }
+}
 
+// TODO 3: Define the `TrainStatus` enum with data
+#[derive(Debug, Clone)]
+enum TrainStatus {
+    OnTime,
+    Delayed { minutes: u32, reason: String },
+    Cancelled { reason: String },
+    Arrived { platform: u8 },
+    Departed { next_station: String },
+}
+
+// TODO 4: Implement methods on `TrainStatus`
+impl TrainStatus {
     fn emoji(&self) -> &str {
         match self {
-            BookingStatus::Confirmed { .. } => "\u{2705}",
-            BookingStatus::Waitlisted(_) => "\u{23f3}",
-            BookingStatus::Cancelled { .. } => "\u{274c}",
-            BookingStatus::RAC(_) => "\u{1f504}",
+            TrainStatus::OnTime => "\u{1f7e2}",
+            TrainStatus::Delayed { .. } => "\u{1f7e1}",
+            TrainStatus::Cancelled { .. } => "\u{1f534}",
+            TrainStatus::Arrived { .. } => "\u{1f535}",
+            TrainStatus::Departed { .. } => "\u{1f682}",
+        }
+    }
+
+    fn description(&self) -> String {
+        match self {
+            TrainStatus::OnTime => String::from("On time"),
+            TrainStatus::Delayed { minutes, reason } => {
+                format!("Delayed by {} minutes: {}", minutes, reason)
+            }
+            TrainStatus::Cancelled { reason } => {
+                format!("Cancelled: {}", reason)
+            }
+            TrainStatus::Arrived { platform } => {
+                format!("Arrived at platform {}", platform)
+            }
+            TrainStatus::Departed { next_station } => {
+                format!("Departed, next station: {}", next_station)
+            }
+        }
+    }
+
+    fn is_running(&self) -> bool {
+        match self {
+            TrainStatus::OnTime | TrainStatus::Delayed { .. } | TrainStatus::Departed { .. } => {
+                true
+            }
+            TrainStatus::Cancelled { .. } | TrainStatus::Arrived { .. } => false,
         }
     }
 }
 
-// TODO 5: Define the `Booking` struct
+// TODO 5: Define the `Train` struct
 #[derive(Debug)]
-struct Booking {
-    id: u32,
-    passenger: String,
-    train_name: String,
-    from: String,
-    to: String,
-    distance_km: f64,
-    class: CoachClass,
-    status: BookingStatus,
+struct Train {
+    name: String,
+    number: u32,
+    train_type: TrainType,
+    status: TrainStatus,
 }
 
-// TODO 6: Implement methods on `Booking`
-impl Booking {
-    fn new(
-        id: u32,
-        passenger: &str,
-        train_name: &str,
-        from: &str,
-        to: &str,
-        distance_km: f64,
-        class: CoachClass,
-        status: BookingStatus,
-    ) -> Self {
-        Booking {
-            id,
-            passenger: passenger.to_string(),
-            train_name: train_name.to_string(),
-            from: from.to_string(),
-            to: to.to_string(),
-            distance_km,
-            class,
+// TODO 6: Implement methods on `Train`
+impl Train {
+    fn new(name: &str, number: u32, train_type: TrainType, status: TrainStatus) -> Self {
+        Train {
+            name: name.to_string(),
+            number,
+            train_type,
             status,
         }
     }
 
-    fn fare(&self) -> f64 {
-        self.distance_km * self.class.price_per_km()
-    }
-
     fn display(&self) {
         println!(
-            "[{}] Booking #{}: {}",
+            "{} {} (#{}) [{}] - {}",
             self.status.emoji(),
-            self.id,
-            self.passenger
+            self.name,
+            self.number,
+            self.train_type.display_name(),
+            self.status.description()
         );
-        println!(
-            "     {} | {} \u{2192} {} | {} km",
-            self.train_name, self.from, self.to, self.distance_km as u64
-        );
-        println!(
-            "     Class: {} | Fare: \u{20b9}{:.2}",
-            self.class.display_name(),
-            self.fare()
-        );
-        println!("     Status: {}", self.status.description());
     }
 
-    fn cancel(&mut self) {
-        let refund = self.fare() * 0.85;
-        self.status = BookingStatus::Cancelled {
-            refund_amount: refund,
-        };
-    }
-
-    fn confirm(&mut self, coach: &str, seat: u32) {
-        self.status = BookingStatus::Confirmed {
-            coach: coach.to_string(),
-            seat,
-        };
+    fn is_delayed_over(&self, threshold: u32) -> bool {
+        match &self.status {
+            TrainStatus::Delayed { minutes, .. } => *minutes > threshold,
+            _ => false,
+        }
     }
 }
 
-// TODO 7: Implement the `find_booking` function
-fn find_booking(bookings: &[Booking], id: u32) -> Option<&Booking> {
-    bookings.iter().find(|b| b.id == id)
-}
-
-// TODO 8: Implement the `parse_coach_class` function
-fn parse_coach_class(input: &str) -> Result<CoachClass, String> {
-    match input.to_lowercase().as_str() {
-        "1a" | "first" => Ok(CoachClass::FirstAC),
-        "2a" | "second" => Ok(CoachClass::SecondAC),
-        "3a" | "third" => Ok(CoachClass::ThirdAC),
-        "sl" | "sleeper" => Ok(CoachClass::Sleeper),
-        "gn" | "general" => Ok(CoachClass::General),
-        _ => Err(format!("Unknown coach class: {}", input)),
-    }
-}
-
-// TODO 9: Implement the `summarize_bookings` function
-fn summarize_bookings(bookings: &[Booking]) {
-    let mut confirmed = 0;
-    let mut waitlisted = 0;
-    let mut rac = 0;
+// TODO 7: Implement `count_by_status`
+fn count_by_status(trains: &[Train]) {
+    let mut on_time = 0;
+    let mut delayed = 0;
     let mut cancelled = 0;
+    let mut arrived = 0;
+    let mut departed = 0;
 
-    for booking in bookings {
-        match &booking.status {
-            BookingStatus::Confirmed { .. } => confirmed += 1,
-            BookingStatus::Waitlisted(_) => waitlisted += 1,
-            BookingStatus::RAC(_) => rac += 1,
-            BookingStatus::Cancelled { .. } => cancelled += 1,
+    for train in trains {
+        match &train.status {
+            TrainStatus::OnTime => on_time += 1,
+            TrainStatus::Delayed { .. } => delayed += 1,
+            TrainStatus::Cancelled { .. } => cancelled += 1,
+            TrainStatus::Arrived { .. } => arrived += 1,
+            TrainStatus::Departed { .. } => departed += 1,
         }
     }
 
-    println!("--- Booking Summary ---");
-    println!("Total: {}", bookings.len());
-    println!("Confirmed: {}", confirmed);
-    println!("Waitlisted: {}", waitlisted);
-    println!("RAC: {}", rac);
+    println!("--- Status Summary ---");
+    println!("On Time: {}", on_time);
+    println!("Delayed: {}", delayed);
     println!("Cancelled: {}", cancelled);
+    println!("Arrived: {}", arrived);
+    println!("Departed: {}", departed);
+}
+
+// TODO 8: Implement `print_delayed_trains`
+fn print_delayed_trains(trains: &[Train], min_delay: u32) {
+    println!("--- Trains Delayed Over {} Minutes ---", min_delay);
+    for train in trains {
+        if train.is_delayed_over(min_delay) {
+            train.display();
+        }
+    }
 }
 
 // ============================================================================
@@ -198,125 +175,115 @@ fn summarize_bookings(bookings: &[Booking]) {
 // ============================================================================
 
 fn main() {
-    println!("=== RAILWAY BOOKING SYSTEM ===");
+    println!("=== TRAIN STATUS DASHBOARD ===");
 
-    // --- Create bookings ---
-    println!("\n--- All Bookings ---");
-    let mut bookings = vec![
-        Booking::new(
-            1001,
-            "Giridhar",
+    // --- Create trains ---
+    let trains = vec![
+        Train::new(
             "Rajdhani Express",
-            "MAS",
-            "SBC",
-            350.0,
-            CoachClass::FirstAC,
-            BookingStatus::Confirmed {
-                coach: String::from("A1"),
-                seat: 23,
-            },
+            12301,
+            TrainType::Express,
+            TrainStatus::OnTime,
         ),
-        Booking::new(
-            1002,
-            "Priya",
+        Train::new(
             "Shatabdi Express",
-            "SBC",
-            "MAS",
-            350.0,
-            CoachClass::SecondAC,
-            BookingStatus::Waitlisted(3),
-        ),
-        Booking::new(
-            1003,
-            "Arjun",
-            "Duronto Express",
-            "MAS",
-            "NDLS",
-            2200.0,
-            CoachClass::ThirdAC,
-            BookingStatus::RAC(42),
-        ),
-        Booking::new(
-            1004,
-            "Meera",
-            "Garib Rath",
-            "MAS",
-            "HWH",
-            1650.0,
-            CoachClass::Sleeper,
-            BookingStatus::Confirmed {
-                coach: String::from("S4"),
-                seat: 15,
+            12007,
+            TrainType::Superfast,
+            TrainStatus::Delayed {
+                minutes: 45,
+                reason: String::from("Signal failure at junction"),
             },
         ),
-        Booking::new(
-            1005,
-            "Ravi",
-            "Chennai Local",
-            "MAS",
-            "TBM",
-            25.0,
-            CoachClass::General,
-            BookingStatus::Waitlisted(7),
+        Train::new(
+            "Chennai Express",
+            12163,
+            TrainType::Superfast,
+            TrainStatus::Cancelled {
+                reason: String::from("Track maintenance"),
+            },
+        ),
+        Train::new(
+            "Nilgiri Express",
+            12671,
+            TrainType::Passenger,
+            TrainStatus::Arrived { platform: 3 },
+        ),
+        Train::new(
+            "Mumbai Local",
+            90123,
+            TrainType::Local,
+            TrainStatus::Departed {
+                next_station: String::from("Dadar"),
+            },
+        ),
+        Train::new(
+            "Garib Rath",
+            12578,
+            TrainType::Express,
+            TrainStatus::Delayed {
+                minutes: 15,
+                reason: String::from("Waiting for connecting train"),
+            },
+        ),
+        Train::new(
+            "Goods Special",
+            99001,
+            TrainType::Freight,
+            TrainStatus::OnTime,
+        ),
+        Train::new(
+            "Duronto Express",
+            12245,
+            TrainType::Superfast,
+            TrainStatus::Delayed {
+                minutes: 90,
+                reason: String::from("Heavy rainfall"),
+            },
         ),
     ];
 
-    for booking in &bookings {
-        booking.display();
-        println!();
+    // --- Display all trains ---
+    println!("\n--- All Trains ---");
+    for train in &trains {
+        train.display();
     }
 
-    // --- Find a booking using Option ---
-    println!("--- Find Booking ---");
-    match find_booking(&bookings, 1003) {
-        Some(b) => println!("Found: Booking #{} for {}", b.id, b.passenger),
-        None => println!("Booking not found"),
-    }
-    match find_booking(&bookings, 9999) {
-        Some(b) => println!("Found: Booking #{} for {}", b.id, b.passenger),
-        None => println!("Booking #9999 not found"),
-    }
-
-    // --- if let ---
-    println!("\n--- Quick Lookup (if let) ---");
-    if let Some(booking) = find_booking(&bookings, 1001) {
+    // --- Train type info ---
+    println!("\n--- Train Type Info ---");
+    let types = [
+        TrainType::Express,
+        TrainType::Superfast,
+        TrainType::Passenger,
+        TrainType::Local,
+        TrainType::Freight,
+    ];
+    for t in &types {
         println!(
-            "Giridhar's booking: {} class on {}",
-            booking.class.display_name(),
-            booking.train_name
+            "{}: max speed {} km/h, priority {}",
+            t.display_name(),
+            t.max_speed(),
+            t.priority()
         );
     }
 
-    // --- Parse coach class using Result ---
-    println!("\n--- Parse Coach Class ---");
-    let inputs = ["1A", "SL", "general", "2A", "XYZ", "first"];
-    for input in inputs {
-        match parse_coach_class(input) {
-            Ok(class) => println!(
-                "  '{}' \u{2192} {} (\u{20b9}{:.2}/km)",
-                input,
-                class.display_name(),
-                class.price_per_km()
-            ),
-            Err(e) => println!("  '{}' \u{2192} Error: {}", input, e),
+    // --- Running trains ---
+    println!("\n--- Running Trains ---");
+    for train in &trains {
+        if train.status.is_running() {
+            println!(
+                "{} {} (#{}) is running",
+                train.status.emoji(),
+                train.name,
+                train.number
+            );
         }
     }
 
-    // --- Modify bookings ---
-    println!("\n--- Booking Updates ---");
-
-    // Confirm waitlisted booking
-    bookings[1].confirm("B2", 17);
-    println!("Updated booking #1002:");
-    bookings[1].display();
-
-    // Cancel a booking
+    // --- Delayed trains ---
     println!();
-    bookings[4].cancel();
-    println!("Updated booking #1005:");
-    bookings[4].display();
+    print_delayed_trains(&trains, 30);
 
-    // --- Summary ---
+    // --- Status summary ---
     println!();
-    summarize_bookings(&bookings);
+    count_by_status(&trains);
 }
