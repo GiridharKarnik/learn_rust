@@ -56,14 +56,7 @@
 //
 // Derive: Debug, Clone, PartialEq
 
-#[derive(Debug, Clone, PartialEq)]
-enum TrainType {
-    Express,
-    Superfast,
-    Passenger,
-    Local,
-    Freight,
-}
+// Your code here
 
 // =============================================
 // TODO 2: Implement methods on `TrainType`
@@ -113,14 +106,7 @@ impl TrainType {
 //
 // Derive: Debug, Clone
 
-#[derive(Debug, Clone)]
-enum TrainStatus {
-    OnTime,
-    Delayed { minutes: u32, reason: String },
-    Cancelled { reason: String },
-    Arrived { platform: u8 },
-    Departed { next_station: String },
-}
+// Your code here
 
 // =============================================
 // TODO 4: Implement methods on `TrainStatus`
@@ -175,13 +161,7 @@ impl TrainStatus {
 //
 // Derive: Debug
 
-#[derive(Debug)]
-struct Train {
-    name: String,
-    number: u32,
-    train_type: TrainType,
-    status: TrainStatus,
-}
+// Your code here
 
 // =============================================
 // TODO 6: Implement methods on `Train`
