@@ -54,6 +54,24 @@
 //
 // WHY: Every announcement needs a visual urgency tag.
 //      This is how `match` works on simple enums — variant in, value out.
+#[derive(Debug, Clone, PartialEq)]
+enum Urgency {
+    Info,
+    Minor,
+    Urgent,
+    Critical,
+}
+
+impl Urgency {
+    fn prefix(&self) -> &str {
+        match self {
+            Urgency::Info => "🟢 [INFO]",
+            Urgency::Minor => "🟡 [MINOR]",
+            Urgency::Urgent => "🟠 [URGENT]",
+            Urgency::Critical => "🔴 [CRITICAL]",
+        }
+    }
+}
 
 // =============================================
 // TODO 2: Define the `Event` enum (with data!)
@@ -74,6 +92,33 @@
 //      different shape. A Departure has a destination but no reason.
 //      A Cancellation has a reason but no platform. Rust enforces that
 //      you handle each shape correctly.
+#[derive(Debug, Clone)]
+enum Event {
+    Departure {
+        train: String,
+        platform: u8,
+        destination: String,
+    },
+    Arrival {
+        train: String,
+        platform: u8,
+        origin: String,
+    },
+    Delay {
+        train: String,
+        minutes: u32,
+        reason: String,
+    },
+    Cancellation {
+        train: String,
+        reason: String,
+    },
+    PlatformChange {
+        train: String,
+        old_platform: u8,
+        new_platform: u8,
+    },
+}
 
 // =============================================
 // TODO 3: Implement `Event` methods
@@ -111,6 +156,68 @@
 //     WHY: Sometimes you need the same field from every variant.
 //          This shows that you always have to match even when every
 //          arm does the same thing.
+impl Event {
+    fn urgency(&self) -> Urgency {
+        match self {
+            Event::Arrival { .. } | Event::Departure { .. } => Urgency::Info,
+            Event::Cancellation { .. } => Urgency::Critical,
+            Event::PlatformChange { .. } => Urgency::Urgent,
+            Event::Delay { minutes, .. } => {
+                if *minutes > 30 {
+                    return Urgency::Urgent;
+                } else {
+                    return Urgency::Minor;
+                }
+            }
+        }
+    }
+
+    fn announce(&self) -> String {
+        match self {
+            Event::Arrival {
+                train,
+                platform,
+                origin,
+            } => {
+                return format!("{train} from {origin} arriving at platform {platform}");
+            }
+            Event::Departure {
+                train,
+                platform,
+                destination,
+            } => {
+                return format!("{train} to {destination} departing from platform {platform}");
+            }
+            Event::Delay {
+                train,
+                minutes,
+                reason,
+            } => {
+                return format!("{train} delayed by {minutes} min — {reason}");
+            }
+            Event::Cancellation { train, reason } => {
+                return format!("CANCELLED: {train} — {reason}");
+            }
+            Event::PlatformChange {
+                train,
+                old_platform,
+                new_platform,
+            } => {
+                return format!("{train}: platform changed from {old_platform} to {new_platform}");
+            }
+        }
+    }
+
+    fn train_name(&self) -> &str {
+        match self {
+            Event::Arrival { train, .. } => train,
+            Event::Departure { train, .. } => train,
+            Event::Delay { train, .. } => train,
+            Event::Cancellation { train, .. } => train,
+            Event::PlatformChange { train, .. } => train,
+        }
+    }
+}
 
 // =============================================
 // TODO 4: Define `AnnouncementBoard` struct and methods
@@ -152,6 +259,70 @@
 //       Total: 8
 //
 //     Hint: use `..` to ignore fields: Event::Departure { .. } => departures += 1,
+struct AnnouncementBoard {
+    station: String,
+    events: Vec<Event>,
+}
+
+impl AnnouncementBoard {
+    fn new(station: &str) -> Self {
+        return AnnouncementBoard {
+            station: String::from(station),
+            events: Vec::new(),
+        };
+    }
+
+    fn add(&mut self, event: Event) {
+        self.events.push(event);
+    }
+
+    fn display_all(&self) {
+        println!("--- All Announcements ---");
+
+        for event in &self.events {
+            println!("{} {}", event.urgency().prefix(), event.announce())
+        }
+    }
+
+    fn display_urgent(&self) {
+        println!("--- Urgent & Critical Only ---");
+
+        for event in &self.events {
+            match event.urgency() {
+                Urgency::Urgent | Urgency::Critical => {
+                    println!("{} {}", event.urgency().prefix(), event.announce())
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn summary(&self) {
+        let mut departures_count = 0;
+        let mut arrivals_count = 0;
+        let mut delays_count = 0;
+        let mut cancellations_count = 0;
+        let mut platform_changes_count = 0;
+
+        for event in &self.events {
+            match event {
+                Event::Arrival { .. } => arrivals_count += 1,
+                Event::Departure { .. } => departures_count += 1,
+                Event::Delay { .. } => delays_count += 1,
+                Event::Cancellation { .. } => cancellations_count += 1,
+                Event::PlatformChange { .. } => platform_changes_count += 1,
+            }
+        }
+
+        println!("--- Event Summary ---");
+        println!("Departures: {}", departures_count);
+        println!("Arrivals: {}", arrivals_count);
+        println!("Delays: {}", delays_count);
+        println!("Cancellations: {}", cancellations_count);
+        println!("Platform changes: {}", platform_changes_count);
+        println!("Total: {}", &self.events.len());
+    }
+}
 
 // =============================================
 // main() — DO NOT EDIT BELOW THIS LINE

@@ -1,9 +1,9 @@
 # Lesson 06 — Option, Result & Error Handling
 
-In Lesson 05, we introduced `Option<T>` and `Result<T, E>` as enums — you saw their
-shape, matched on them, and used a few convenience methods. Now we go **deep**. This
-lesson is about mastering them as your primary tools for handling the two most common
-situations in programming: "maybe there's no value" and "this operation can fail."
+In Lesson 05, you learned how enums can carry data and how `match` lets you extract it.
+Now we meet Rust's two most important enums: `Option<T>` and `Result<T, E>`. They handle
+the two most common situations in programming: "maybe there's no value" and "this
+operation can fail."
 
 This is where Rust's safety story really clicks. Once you're fluent with `Option`,
 `Result`, and the `?` operator, you'll wonder how you ever lived without them.
@@ -47,7 +47,7 @@ you can use the value.
 
 ## 2. Option\<T\> — "Maybe there's a value"
 
-You met `Option` briefly in Lesson 05. Let's look at it properly.
+Let's look at it properly.
 
 It's just an enum:
 
@@ -491,8 +491,7 @@ script. No nesting, no rightward drift.
 
 ## 7. `if let` and `while let` — Concise Pattern Matching
 
-You saw `if let` in Lesson 05. Here's the full picture for working with `Option`
-and `Result`.
+Here's the full picture for working with `Option` and `Result`.
 
 ### `if let` — when you only care about one variant
 
