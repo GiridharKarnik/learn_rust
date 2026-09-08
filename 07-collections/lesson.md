@@ -6,6 +6,51 @@ You've already pushed items into a `Vec` and iterated over `&vec`. Now let's go 
 
 > HashMap and iterators get their own dedicated lessons next. This one is 100% Vec + slices.
 
+But first — Rust has **three** ways to store a sequence of values. Let's clear this up:
+
+### Arrays vs Vec vs Slices
+
+```rust
+let array: [u32; 3] = [1, 2, 3];     // Array — fixed size, on the stack
+let vec: Vec<u32> = vec![1, 2, 3];    // Vec — growable, on the heap
+let slice: &[u32] = &vec[0..2];       // Slice — borrowed view into either
+```
+
+| Type | Owns data? | Size | Lives on | Use when |
+|------|-----------|------|----------|----------|
+| `[T; N]` (array) | Yes | Fixed at compile time | Stack | You know the exact size (rare) |
+| `Vec<T>` | Yes | Grows/shrinks at runtime | Heap | You need a list (most of the time) |
+| `&[T]` (slice) | No | Any | Borrows | Function parameters |
+
+**Arrays** have the size baked into the type — `[u32; 3]` and `[u32; 5]` are different types.
+You can't push or pop. They're useful for fixed things like `[f64; 3]` for RGB colors, but
+you'll rarely use them directly.
+
+**Vec** is what you'll use 95% of the time. Growable, flexible, heap-allocated.
+
+**Slices** don't own anything — they're a pointer + length, looking at data owned by a Vec
+or an array. This is the same relationship as `String` vs `&str`:
+
+```
+String  ←→  Vec<T>     // owned, growable, heap
+&str    ←→  &[T]       // borrowed view, use in function params
+```
+
+Both arrays and Vecs auto-coerce to slices, so functions that take `&[T]` accept everything:
+
+```rust
+fn total(numbers: &[u32]) -> u32 {
+    numbers.iter().sum()
+}
+
+let array = [1, 2, 3];
+let vec = vec![4, 5, 6];
+total(&array);   // ✅
+total(&vec);     // ✅
+```
+
+Now let's focus on Vec, since that's what you'll use most.
+
 ---
 
 ## 1. Vec\<T\> — The Growable Array
