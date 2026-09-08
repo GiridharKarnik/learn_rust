@@ -31,10 +31,10 @@ XX-lesson-name/
 | 04  | `04-structs-and-methods` | Structs & Methods |
 | 05  | `05-enums-and-pattern-matching` | Enums & Pattern Matching |
 | 06  | `06-option-result-and-error-handling` | Option, Result & Error Handling |
-| 07  | `07-collections` | Collections — Vec, HashMap & Iterators |
-| 08  | *Coming soon* | Traits & Generics |
-| 07  | *Coming soon* | Error Handling |
-| 08  | *Coming soon* | Traits & Generics |
+| 07  | `07-collections` | Vec & Slices |
+| 08  | `08-hashmaps` | HashMap |
+| 09  | `09-iterators` | Iterators |
+| 10  | *Coming soon* | Traits & Generics |
 
 ## Prerequisites
 

@@ -1,269 +1,168 @@
-// =============================================
-// EXERCISE 07: Railway Route Planner
-// =============================================
-//
-// Build a route planner using Vec, HashMap, and iterators.
-// Complete all the TODOs so the program compiles and produces the expected output.
-//
-// Run with: cargo run
-//
-// Expected output:
-//
-//   === RAILWAY ROUTE PLANNER ===
-//
-//   --- Timetable ---
-//   #12001 Rajdhani Express: Chennai → New Delhi (2180 km, ₹4250.00)
-//   #12007 Shatabdi Express: Chennai → Bangalore (350 km, ₹755.50)
-//   #12245 Duronto Express: Chennai → Mumbai (1280 km, ₹2100.00)
-//   #12675 Kovai Express: Chennai → Coimbatore (500 km, ₹350.00)
-//   #16525 Island Express: Bangalore → Kanyakumari (890 km, ₹625.00)
-//   #12625 Thiruvananthapuram Mail: Chennai → Thiruvananthapuram (920 km, ₹780.00)
-//
-//   --- Trains through Katpadi ---
-//     #12001 Rajdhani Express
-//     #12007 Shatabdi Express
-//     #12675 Kovai Express
-//
-//   --- Trains through Salem ---
-//     #12675 Kovai Express
-//     #12625 Thiruvananthapuram Mail
-//
-//   --- Fare Summary ---
-//     Bangalore → Kanyakumari : ₹625.00
-//     Chennai → Bangalore : ₹755.50
-//     Chennai → Coimbatore : ₹350.00
-//     Chennai → Mumbai : ₹2100.00
-//     Chennai → New Delhi : ₹4250.00
-//     Chennai → Thiruvananthapuram : ₹780.00
-//
-//   --- Busiest Stations ---
-//     Chennai: 5 trains
-//     Katpadi: 3 trains
-//     Bangalore: 2 trains
-//     Coimbatore: 2 trains
-//     Erode: 2 trains
-//
-//   --- Route Summary ---
-//   Total trains: 6
-//   Total distance: 6120 km
-//   Average fare: ₹1476.75
-//   Longest route: #12001 Rajdhani Express (2180 km)
-//   Cheapest train: #12675 Kovai Express (₹350.00)
-
-use std::collections::HashMap;
+// Lesson 07: Vec and Slices — Train Roster Manager (SOLUTION)
 
 #[derive(Debug, Clone)]
 struct Train {
-    number: u32,
     name: String,
-    from: String,
-    to: String,
-    distance_km: u32,
-    fare: f64,
-    stops: Vec<String>,
+    number: u32,
+    speed_kmh: u32,
+    is_active: bool,
 }
 
-// =============================================
-// TODO 1: Train::new and build_schedule
-// =============================================
-//
-// (a) Implement Train::new:
-//     fn new(number: u32, name: &str, from: &str, to: &str,
-//            distance_km: u32, fare: f64, stops: Vec<&str>) -> Self
-//
-//     Convert &str fields to String with .to_string()
-//     Convert stops Vec<&str> to Vec<String> using:
-//       stops.iter().map(|s| s.to_string()).collect()
-//
-//     WHY: This is your first real iterator chain — .iter().map().collect()
-//          is the bread and butter of Rust collections.
-//
-// (b) Implement build_schedule() -> Vec<Train>
-//     Return a vec! with these 6 trains:
-//
-//     #12001 Rajdhani Express: Chennai → New Delhi, 2180 km, ₹4250.00
-//       Stops: Chennai, Katpadi, Vijayawada, Nagpur, Bhopal, Agra, New Delhi
-//
-//     #12007 Shatabdi Express: Chennai → Bangalore, 350 km, ₹755.50
-//       Stops: Chennai, Katpadi, Jolarpettai, Bangalore
-//
-//     #12245 Duronto Express: Chennai → Mumbai, 1280 km, ₹2100.00
-//       Stops: Chennai, Pune, Mumbai
-//
-//     #12675 Kovai Express: Chennai → Coimbatore, 500 km, ₹350.00
-//       Stops: Chennai, Katpadi, Salem, Erode, Coimbatore
-//
-//     #16525 Island Express: Bangalore → Kanyakumari, 890 km, ₹625.00
-//       Stops: Bangalore, Jolarpettai, Erode, Madurai, Kanyakumari
-//
-//     #12625 Thiruvananthapuram Mail: Chennai → Thiruvananthapuram, 920 km, ₹780.00
-//       Stops: Chennai, Salem, Coimbatore, Palakkad, Thiruvananthapuram
+impl Train {
+    fn new(name: &str, number: u32, speed_kmh: u32, is_active: bool) -> Self {
+        Train {
+            name: name.to_string(),
+            number,
+            speed_kmh,
+            is_active,
+        }
+    }
+}
 
-// =============================================
-// TODO 2: search_trains
-// =============================================
-//
-// fn search_trains<'a>(trains: &'a [Train], station: &str) -> Vec<&'a Train>
-//
-// Return all trains that STOP at the given station.
-// Check if station is in train.stops using .contains().
-//
-// You can use a for loop:
-//   let mut result = Vec::new();
-//   for train in trains {
-//       if train.stops.contains(&station.to_string()) {
-//           result.push(train);
-//       }
-//   }
-//   result
-//
-// Or use iterators:
-//   trains.iter().filter(|t| t.stops.contains(&station.to_string())).collect()
-//
-// WHY: Practice filtering a collection. The <'a> lifetime just means
-//      "the references I return live as long as the input slice."
-//      Don't worry about lifetimes too much — the compiler guided you here.
+impl std::fmt::Display for Train {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "#{} {} — {} km/h",
+            self.number, self.name, self.speed_kmh
+        )
+    }
+}
 
-// =============================================
-// TODO 3: fare_summary
-// =============================================
-//
-// fn fare_summary(trains: &[Train]) -> HashMap<String, f64>
-//
-// Build a HashMap where:
-//   key = "{from} → {to}" (use format! with the → arrow)
-//   value = the fare
-//
-// Loop through trains, format the route string, insert into HashMap.
-//
-// WHY: Practice building a HashMap from data. This is a very common pattern —
-//      transforming a Vec into a lookup table.
+// ---------------------------------------------------------------------------
+// TODO 1: Create and populate a roster
+// ---------------------------------------------------------------------------
 
-// =============================================
-// TODO 4: busiest_stations
-// =============================================
-//
-// fn busiest_stations(trains: &[Train]) -> Vec<(String, usize)>
-//
-// Count how many trains stop at each station across ALL trains.
-// Return as a Vec of (station_name, count) sorted by count descending.
-//
-// Steps:
-//   1. Create a HashMap<String, usize> for counts
-//   2. Loop through every train, then every stop in that train
-//   3. Use the entry API to count:
-//        *counts.entry(stop.clone()).or_insert(0) += 1;
-//   4. Convert HashMap to Vec:
-//        let mut result: Vec<(String, usize)> = counts.into_iter().collect();
-//   5. Sort descending by count:
-//        result.sort_by(|a, b| b.1.cmp(&a.1));
-//   6. Return result
-//
-// WHY: The entry API is THE most important HashMap pattern in Rust.
-//      .entry(key).or_insert(default) says "give me the value for this key,
-//      or insert a default if it doesn't exist." The * dereferences so you
-//      can modify the value in place.
+fn build_roster() -> Vec<Train> {
+    vec![
+        Train::new("Rajdhani Express", 12001, 130, true),
+        Train::new("Shatabdi Express", 12007, 150, true),
+        Train::new("Duronto Express", 12245, 120, true),
+        Train::new("Kovai Express", 12675, 110, true),
+        Train::new("Island Express", 16525, 100, false),
+        Train::new("Vande Bharat Express", 22436, 180, true),
+    ]
+}
 
-// =============================================
-// TODO 5: route_summary
-// =============================================
-//
-// fn route_summary(trains: &[Train])
-//
-// Print these stats using iterator methods:
-//   - Total trains: trains.len()
-//   - Total distance: sum all distance_km
-//       trains.iter().map(|t| t.distance_km).sum::<u32>()
-//   - Average fare: sum all fares / count
-//       trains.iter().map(|t| t.fare).sum::<f64>() / trains.len() as f64
-//   - Longest route: train with max distance_km
-//       trains.iter().max_by_key(|t| t.distance_km).unwrap()
-//   - Cheapest train: train with min fare
-//       trains.iter().min_by(|a, b| a.fare.partial_cmp(&b.fare).unwrap()).unwrap()
-//
-// Print format:
-//   --- Route Summary ---
-//   Total trains: 6
-//   Total distance: 6120 km
-//   Average fare: ₹1476.75
-//   Longest route: #12001 Rajdhani Express (2180 km)
-//   Cheapest train: #12675 Kovai Express (₹350.00)
-//
-// WHY: Practice iterator consumers — .sum(), .max_by_key(), .min_by().
-//      Note: .partial_cmp() is needed for f64 because floats can be NaN,
-//      and NaN doesn't have a defined ordering.
+// ---------------------------------------------------------------------------
+// TODO 2: Find a train by number
+// ---------------------------------------------------------------------------
 
-// =============================================
-// TODO 6: format_timetable
-// =============================================
-//
-// fn format_timetable(trains: &[Train]) -> String
-//
-// Build a single String with all trains, one per line:
-//   "#12001 Rajdhani Express: Chennai → New Delhi (2180 km, ₹4250.00)"
-//
-// Use an iterator chain:
-//   trains.iter()
-//       .map(|t| format!("#{} {}: {} → {} ({} km, ₹{:.2})",
-//           t.number, t.name, t.from, t.to, t.distance_km, t.fare))
-//       .collect::<Vec<_>>()
-//       .join("\n")
-//
-// WHY: Practice chaining .map() → .collect() → .join().
-//      This pattern (transform each item, collect, join) is extremely common
-//      for building formatted output from collections.
+fn find_by_number(roster: &[Train], number: u32) -> Option<&Train> {
+    for train in roster {
+        if train.number == number {
+            return Some(train);
+        }
+    }
+    None
+}
 
-// =============================================
-// main() — DO NOT EDIT BELOW THIS LINE
-// =============================================
+// ---------------------------------------------------------------------------
+// TODO 3: Get active trains
+// ---------------------------------------------------------------------------
+
+fn active_trains(roster: &[Train]) -> Vec<&Train> {
+    let mut result = Vec::new();
+    for train in roster {
+        if train.is_active {
+            result.push(train);
+        }
+    }
+    result
+}
+
+// ---------------------------------------------------------------------------
+// TODO 4: Sort and display
+// ---------------------------------------------------------------------------
+
+fn display_sorted_by_speed(roster: &mut Vec<Train>) {
+    roster.sort_by(|a, b| b.speed_kmh.cmp(&a.speed_kmh));
+    for train in roster.iter() {
+        println!("  {}", train);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// TODO 5: Deactivate slow trains and clean up
+// ---------------------------------------------------------------------------
+
+fn deactivate_slow_trains(roster: &mut Vec<Train>, min_speed: u32) {
+    // Phase 1: Deactivate
+    for train in roster.iter_mut() {
+        if train.speed_kmh < min_speed {
+            println!(
+                "  Deactivated: {} ({} km/h < {} km/h)",
+                train.name, train.speed_kmh, min_speed
+            );
+            train.is_active = false;
+        }
+    }
+
+    // Phase 2: Remove inactive
+    let inactive_count = roster.iter().filter(|t| !t.is_active).count();
+    roster.retain(|t| t.is_active);
+    println!("  Removed {} inactive trains.", inactive_count);
+}
+
+// ---------------------------------------------------------------------------
+// main
+// ---------------------------------------------------------------------------
 
 fn main() {
-    println!("=== RAILWAY ROUTE PLANNER ===");
+    println!("=== TRAIN ROSTER MANAGER ===");
 
-    let trains = build_schedule();
+    // Build the roster
+    let mut roster = build_roster();
 
-    // Display timetable
-    println!("\n--- Timetable ---");
-    println!("{}", format_timetable(&trains));
-
-    // Search for trains through a station
-    println!("\n--- Trains through Katpadi ---");
-    let katpadi_trains = search_trains(&trains, "Katpadi");
-    if katpadi_trains.is_empty() {
-        println!("No trains found");
-    } else {
-        for train in &katpadi_trains {
-            println!("  #{} {}", train.number, train.name);
-        }
+    // Display full roster
+    println!("\n--- Full Roster ({} trains) ---", roster.len());
+    for train in &roster {
+        let status = if train.is_active {
+            "active"
+        } else {
+            "inactive"
+        };
+        println!("  {} [{}]", train, status);
     }
 
-    println!("\n--- Trains through Salem ---");
-    let salem_trains = search_trains(&trains, "Salem");
-    if salem_trains.is_empty() {
-        println!("No trains found");
-    } else {
-        for train in &salem_trains {
-            println!("  #{} {}", train.number, train.name);
-        }
+    // Find trains by number
+    println!("\n--- Find Train ---");
+    match find_by_number(&roster, 12007) {
+        Some(train) => println!(
+            "  Looking for #12007: Found! {} ({} km/h)",
+            train.name, train.speed_kmh
+        ),
+        None => println!("  Looking for #12007: Not found"),
+    }
+    match find_by_number(&roster, 99999) {
+        Some(train) => println!(
+            "  Looking for #99999: Found! {} ({} km/h)",
+            train.name, train.speed_kmh
+        ),
+        None => println!("  Looking for #99999: Not found"),
     }
 
-    // Fare lookup
-    println!("\n--- Fare Summary ---");
-    let fares = fare_summary(&trains);
-    let mut fare_list: Vec<_> = fares.iter().collect();
-    fare_list.sort_by_key(|(route, _)| route.to_string());
-    for (route, fare) in &fare_list {
-        println!("  {} : ₹{:.2}", route, fare);
+    // Active trains only
+    println!("\n--- Active Trains ---");
+    let active = active_trains(&roster);
+    for train in &active {
+        println!("  {}", train);
     }
 
-    // Busiest stations
-    println!("\n--- Busiest Stations ---");
-    let stations = busiest_stations(&trains);
-    for (station, count) in stations.iter().take(5) {
-        println!("  {}: {} trains", station, count);
-    }
+    // Sort by speed
+    println!("\n--- Sorted by Speed (fastest first) ---");
+    display_sorted_by_speed(&mut roster);
 
-    // Route summary
-    println!();
-    route_summary(&trains);
+    // Deactivate and clean up
+    println!("\n--- Deactivate & Clean Up (min speed: 115 km/h) ---");
+    deactivate_slow_trains(&mut roster, 115);
+    println!("  Remaining roster ({} trains):", roster.len());
+    for train in &roster {
+        let status = if train.is_active {
+            "active"
+        } else {
+            "inactive"
+        };
+        println!("    {} [{}]", train, status);
+    }
 }

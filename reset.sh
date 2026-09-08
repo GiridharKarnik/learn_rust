@@ -13,11 +13,13 @@ get_folder() {
     05)       echo "05-enums-and-pattern-matching" ;;
     06)       echo "06-option-result-and-error-handling" ;;
     07)       echo "07-collections" ;;
+    08)       echo "08-hashmaps" ;;
+    09)       echo "09-iterators" ;;
     *)        echo "" ;;
   esac
 }
 
-ALL_KEYS="01 02 02-bonus 03 04 05 06 07"
+ALL_KEYS="01 02 02-bonus 03 04 05 06 07 08 09"
 
 reset_lesson() {
   local key="$1"
