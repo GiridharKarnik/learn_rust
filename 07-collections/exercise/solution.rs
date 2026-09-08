@@ -1,5 +1,8 @@
-// Lesson 07: Vec and Slices — Train Roster Manager (SOLUTION)
+// =============================================
+// SOLUTION — Don't peek until you've tried!
+// =============================================
 
+// TODO 1
 #[derive(Debug, Clone)]
 struct Train {
     name: String,
@@ -8,6 +11,7 @@ struct Train {
     is_active: bool,
 }
 
+// TODO 2
 impl Train {
     fn new(name: &str, number: u32, speed_kmh: u32, is_active: bool) -> Self {
         Train {
@@ -17,22 +21,16 @@ impl Train {
             is_active,
         }
     }
-}
 
-impl std::fmt::Display for Train {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "#{} {} — {} km/h",
+    fn display(&self) -> String {
+        format!(
+            "#{} {} \u{2014} {} km/h",
             self.number, self.name, self.speed_kmh
         )
     }
 }
 
-// ---------------------------------------------------------------------------
-// TODO 1: Create and populate a roster
-// ---------------------------------------------------------------------------
-
+// TODO 3
 fn build_roster() -> Vec<Train> {
     vec![
         Train::new("Rajdhani Express", 12001, 130, true),
@@ -44,10 +42,7 @@ fn build_roster() -> Vec<Train> {
     ]
 }
 
-// ---------------------------------------------------------------------------
-// TODO 2: Find a train by number
-// ---------------------------------------------------------------------------
-
+// TODO 4
 fn find_by_number(roster: &[Train], number: u32) -> Option<&Train> {
     for train in roster {
         if train.number == number {
@@ -57,10 +52,7 @@ fn find_by_number(roster: &[Train], number: u32) -> Option<&Train> {
     None
 }
 
-// ---------------------------------------------------------------------------
-// TODO 3: Get active trains
-// ---------------------------------------------------------------------------
-
+// TODO 5
 fn active_trains(roster: &[Train]) -> Vec<&Train> {
     let mut result = Vec::new();
     for train in roster {
@@ -71,21 +63,15 @@ fn active_trains(roster: &[Train]) -> Vec<&Train> {
     result
 }
 
-// ---------------------------------------------------------------------------
-// TODO 4: Sort and display
-// ---------------------------------------------------------------------------
-
+// TODO 6
 fn display_sorted_by_speed(roster: &mut Vec<Train>) {
     roster.sort_by(|a, b| b.speed_kmh.cmp(&a.speed_kmh));
     for train in roster.iter() {
-        println!("  {}", train);
+        println!("  {}", train.display());
     }
 }
 
-// ---------------------------------------------------------------------------
-// TODO 5: Deactivate slow trains and clean up
-// ---------------------------------------------------------------------------
-
+// TODO 7
 fn deactivate_slow_trains(roster: &mut Vec<Train>, min_speed: u32) {
     // Phase 1: Deactivate
     for train in roster.iter_mut() {
@@ -104,17 +90,11 @@ fn deactivate_slow_trains(roster: &mut Vec<Train>, min_speed: u32) {
     println!("  Removed {} inactive trains.", inactive_count);
 }
 
-// ---------------------------------------------------------------------------
-// main
-// ---------------------------------------------------------------------------
-
 fn main() {
     println!("=== TRAIN ROSTER MANAGER ===");
 
-    // Build the roster
     let mut roster = build_roster();
 
-    // Display full roster
     println!("\n--- Full Roster ({} trains) ---", roster.len());
     for train in &roster {
         let status = if train.is_active {
@@ -122,10 +102,9 @@ fn main() {
         } else {
             "inactive"
         };
-        println!("  {} [{}]", train, status);
+        println!("  {} [{}]", train.display(), status);
     }
 
-    // Find trains by number
     println!("\n--- Find Train ---");
     match find_by_number(&roster, 12007) {
         Some(train) => println!(
@@ -142,18 +121,15 @@ fn main() {
         None => println!("  Looking for #99999: Not found"),
     }
 
-    // Active trains only
     println!("\n--- Active Trains ---");
     let active = active_trains(&roster);
     for train in &active {
-        println!("  {}", train);
+        println!("  {}", train.display());
     }
 
-    // Sort by speed
     println!("\n--- Sorted by Speed (fastest first) ---");
     display_sorted_by_speed(&mut roster);
 
-    // Deactivate and clean up
     println!("\n--- Deactivate & Clean Up (min speed: 115 km/h) ---");
     deactivate_slow_trains(&mut roster, 115);
     println!("  Remaining roster ({} trains):", roster.len());
@@ -163,6 +139,6 @@ fn main() {
         } else {
             "inactive"
         };
-        println!("    {} [{}]", train, status);
+        println!("    {} [{}]", train.display(), status);
     }
 }
