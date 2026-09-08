@@ -1,109 +1,93 @@
 // =============================================
-// SOLUTION — Don't peek until you've tried!
+// EXERCISE 03: Ownership & Borrowing
 // =============================================
+//
+// Write ALL functions AND main() yourself.
+// This exercise builds functions that demonstrate ownership patterns.
+// Your program should produce EXACTLY this output:
+//
+// === OWNERSHIP & BORROWING ===
+//
+// --- Borrowing (immutable) ---
+// 📢 Now arriving: Shatabdi Express
+// Train is still accessible: Shatabdi Express
+//
+// --- Mutable Borrowing ---
+// Before rename: Rajdhani Express
+// After rename: Vande Bharat Express
+//
+// --- Borrow In, Own Out ---
+// Ticket 1: Shatabdi Express - Seat 42
+// Ticket 2: Duronto Express - Seat 15
+//
+// --- Clone Before Move ---
+// Backup copy: Garib Rath Express
+// Moved value: Garib Rath Express
+//
+// --- Borrowed Slice → Owned String ---
+// Route: Chennai → Katpadi → Jolarpettai → Bangalore
+// Stations array still accessible: 4 stops
+//
+// =============================================
+// STEP 1: Write fn announce_train(name: &str)
+//   - Takes an immutable borrow of a string
+//   - Prints "📢 Now arriving: {name}"
+//   - The caller keeps ownership — this function only reads
+//
+// STEP 2: Write fn rename_train(name: &mut String, new_name: &str)
+//   - Takes a mutable borrow of a String and an immutable borrow of the new name
+//   - Clears the original string and pushes the new name into it
+//   - Hint: name.clear() then name.push_str(new_name)
+//
+// STEP 3: Write fn create_ticket(train: &str, seat: u32) -> String
+//   - Borrows the train name and takes a seat number
+//   - Returns a new owned String: "{train} - Seat {seat}"
+//   - This demonstrates "borrow in, own out" — inputs are borrowed,
+//     but the function creates and returns a brand new String
+//
+// STEP 4: Write fn format_route(stations: &[&str]) -> String
+//   - Takes a borrowed slice of string slices
+//   - Returns an owned String joining all stations with " → "
+//   - Hint: you can use stations.join(" → ") or build it manually with a loop
+//
+// STEP 5: Write main() that demonstrates each ownership concept:
+//
+//   Print "=== OWNERSHIP & BORROWING ==="
+//
+//   a) Immutable Borrowing:
+//      - Print header "--- Borrowing (immutable) ---"
+//      - Create a String "Shatabdi Express"
+//      - Pass &reference to announce_train (the function borrows it)
+//      - Print the train name again to prove you still own it
+//
+//   b) Mutable Borrowing:
+//      - Print header "--- Mutable Borrowing ---"
+//      - Create a mutable String "Rajdhani Express"
+//      - Print "Before rename: {train}"
+//      - Pass &mut reference to rename_train with new name "Vande Bharat Express"
+//      - Print "After rename: {train}" to see the change
+//
+//   c) Borrow In, Own Out:
+//      - Print header "--- Borrow In, Own Out ---"
+//      - Call create_ticket("Shatabdi Express", 42) → ticket1
+//      - Call create_ticket("Duronto Express", 15) → ticket2
+//      - Print both tickets
+//
+//   d) Clone Before Move:
+//      - Print header "--- Clone Before Move ---"
+//      - Create a String "Garib Rath Express"
+//      - Clone it to create a backup copy
+//      - Move the original to a new variable (let moved = original)
+//      - Print both the backup and the moved value
+//      - Note: after the move, `original` is no longer valid — only backup and moved are
+//
+//   e) Borrowed Slice → Owned String:
+//      - Print header "--- Borrowed Slice → Owned String ---"
+//      - Create an array of station names: ["Chennai", "Katpadi", "Jolarpettai", "Bangalore"]
+//      - Pass &stations to format_route (borrows the array as a slice)
+//      - Print "Route: {route}"
+//      - Print the stations array length to prove it's still accessible
 
 fn main() {
-    println!("=== PART A: Fix the bugs ===");
-
-    // FIX 1: Clone so both variables own their own copy
-    let train_a = String::from("Shatabdi Express");
-    let train_b = train_a.clone();
-    println!("fix1: {train_a} and {train_b}");
-
-    // FIX 2: Pass a reference so caller keeps ownership
-    let train = String::from("Rajdhani Express");
-    print_name(&train);
-    println!("fix2: {train}");
-
-    // FIX 3: Function borrows instead of taking ownership
-    let my_train = String::from("Duronto Express");
-    display_train(&my_train);
-    println!("fix3: Still mine: {my_train}");
-
-    // FIX 4: Need mut on the variable AND &mut in the function
-    let mut platform_info = String::from("Platform 3");
-    assign_train(&mut platform_info, "Rajdhani Express");
-    println!("fix4: Updated: {platform_info}");
-
-    // FIX 5: Function borrows instead of taking ownership
-    let station = String::from("Chennai Central");
-    let len = get_length(&station);
-    println!("fix5: {station} ({len} chars)");
-    println!("fix5: {station}");
-
-    // FIX 6: Clone to avoid moving — both swapped values are independent
-    let first = String::from("Rajdhani");
-    let second = String::from("Shatabdi");
-    let temp = first.clone();
-    let first = second;
-    let second = temp;
-    println!("fix6: First: {first}, Second: {second}");
-
-    // FIX 7: Capture the returned String into a new binding
-    let name = String::from("Vande Bharat");
-    let name = make_express(name);
-    println!("fix7: {name}");
-
-    println!();
-    println!("=== PART B: Build functions ===");
-
-    let ticket = format_ticket("Giridhar", "Shatabdi Express", "Chennai", "Bangalore");
-    println!("{ticket}");
-
-    let stops = ["Chennai", "Katpadi", "Jolarpettai", "Bangalore"];
-    let description = describe_route(&stops);
-    println!("{description}");
-
-    let mut train = String::from("Rajdhani");
-    upgrade_name(&mut train);
-    println!("Upgraded: {train}");
-}
-
-// Part A — fixed signatures
-
-fn print_name(name: &str) {
-    println!("fix2: {name}");
-}
-
-fn display_train(name: &str) {
-    println!("fix3: Train: {name}");
-}
-
-fn assign_train(info: &mut String, train: &str) {
-    info.push_str(" \u{2014} ");
-    info.push_str(train);
-}
-
-fn get_length(s: &str) -> usize {
-    s.len()
-}
-
-fn make_express(mut name: String) -> String {
-    name.push_str(" Express");
-    name
-}
-
-// Part B — implementations
-
-fn format_ticket(passenger: &str, train: &str, from: &str, to: &str) -> String {
-    format!("Ticket: {passenger} | {train} | {from} \u{2192} {to}")
-}
-
-fn describe_route(stations: &[&str]) -> String {
-    let mut route = String::from("Route: ");
-    for (i, station) in stations.iter().enumerate() {
-        if i > 0 {
-            route.push_str(" \u{2192} ");
-        }
-        route.push_str(station);
-    }
-    route.push_str(&format!(" ({} stops)", stations.len()));
-    route
-}
-
-fn upgrade_name(name: &mut String) {
-    let upper = name.to_uppercase();
-    name.clear();
-    name.push_str(&upper);
-    name.push_str(" EXPRESS");
+    // Your code here
 }
