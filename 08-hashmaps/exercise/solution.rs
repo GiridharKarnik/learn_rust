@@ -2,6 +2,10 @@
 
 use std::collections::HashMap;
 
+// ---------------------------------------------------------------------------
+// TODO 1: Define the Station struct
+// ---------------------------------------------------------------------------
+
 #[derive(Debug, Clone)]
 struct Station {
     name: String,
@@ -11,7 +15,29 @@ struct Station {
 }
 
 // ---------------------------------------------------------------------------
-// TODO 1: Build a station lookup
+// TODO 2: Implement Station methods
+// ---------------------------------------------------------------------------
+
+impl Station {
+    fn new(name: &str, code: &str, platforms: u32, city: &str) -> Self {
+        Station {
+            name: name.to_string(),
+            code: code.to_string(),
+            platforms,
+            city: city.to_string(),
+        }
+    }
+
+    fn display(&self) -> String {
+        format!(
+            "{}: {} ({}) \u{2014} {} platforms",
+            self.code, self.name, self.city, self.platforms
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// TODO 3: Build a station directory
 // ---------------------------------------------------------------------------
 
 fn build_directory() -> HashMap<String, Station> {
@@ -19,59 +45,34 @@ fn build_directory() -> HashMap<String, Station> {
 
     directory.insert(
         "MAS".to_string(),
-        Station {
-            name: "Chennai Central".to_string(),
-            code: "MAS".to_string(),
-            platforms: 12,
-            city: "Chennai".to_string(),
-        },
+        Station::new("Chennai Central", "MAS", 12, "Chennai"),
     );
 
     directory.insert(
         "SBC".to_string(),
-        Station {
-            name: "Bangalore City".to_string(),
-            code: "SBC".to_string(),
-            platforms: 10,
-            city: "Bangalore".to_string(),
-        },
+        Station::new("Bangalore City", "SBC", 10, "Bangalore"),
     );
 
     directory.insert(
         "NDLS".to_string(),
-        Station {
-            name: "New Delhi".to_string(),
-            code: "NDLS".to_string(),
-            platforms: 16,
-            city: "Delhi".to_string(),
-        },
+        Station::new("New Delhi", "NDLS", 16, "Delhi"),
     );
 
     directory.insert(
         "BCT".to_string(),
-        Station {
-            name: "Mumbai Central".to_string(),
-            code: "BCT".to_string(),
-            platforms: 9,
-            city: "Mumbai".to_string(),
-        },
+        Station::new("Mumbai Central", "BCT", 9, "Mumbai"),
     );
 
     directory.insert(
         "HWH".to_string(),
-        Station {
-            name: "Howrah".to_string(),
-            code: "HWH".to_string(),
-            platforms: 23,
-            city: "Kolkata".to_string(),
-        },
+        Station::new("Howrah", "HWH", 23, "Kolkata"),
     );
 
     directory
 }
 
 // ---------------------------------------------------------------------------
-// TODO 2: Look up stations safely
+// TODO 4: Look up stations safely
 // ---------------------------------------------------------------------------
 
 fn lookup_station<'a>(directory: &'a HashMap<String, Station>, code: &str) -> Option<&'a Station> {
@@ -79,7 +80,7 @@ fn lookup_station<'a>(directory: &'a HashMap<String, Station>, code: &str) -> Op
 }
 
 // ---------------------------------------------------------------------------
-// TODO 3: Count trains per city
+// TODO 5: Count trains per city
 // ---------------------------------------------------------------------------
 
 fn trains_per_city(
@@ -98,7 +99,7 @@ fn trains_per_city(
 }
 
 // ---------------------------------------------------------------------------
-// TODO 4: Group stations by city
+// TODO 6: Group stations by city
 // ---------------------------------------------------------------------------
 
 fn stations_by_city(directory: &HashMap<String, Station>) -> HashMap<String, Vec<String>> {
@@ -115,7 +116,7 @@ fn stations_by_city(directory: &HashMap<String, Station>) -> HashMap<String, Vec
 }
 
 // ---------------------------------------------------------------------------
-// TODO 5: Display directory (sorted by code)
+// TODO 7: Display directory (sorted by code)
 // ---------------------------------------------------------------------------
 
 fn display_directory(directory: &HashMap<String, Station>) {
@@ -124,10 +125,7 @@ fn display_directory(directory: &HashMap<String, Station>) {
 
     for code in &codes {
         let station = &directory[code.as_str()];
-        println!(
-            "{:<4}: {} ({}) \u{2014} {} platforms",
-            station.code, station.name, station.city, station.platforms
-        );
+        println!("{}", station.display());
     }
 }
 

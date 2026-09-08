@@ -2,7 +2,7 @@
 // EXERCISE 08: Station Directory
 // =============================================
 //
-// Build a station directory system using HashMap.
+// Build a station directory system using HashMap — from scratch!
 // Complete all the TODOs so the program compiles and produces the expected output.
 //
 // Run with: cargo run
@@ -12,11 +12,11 @@
 //   === STATION DIRECTORY ===
 //
 //   --- All Stations (sorted by code) ---
-//   BCT : Mumbai Central (Mumbai) — 9 platforms
-//   HWH : Howrah (Kolkata) — 23 platforms
-//   MAS : Chennai Central (Chennai) — 12 platforms
+//   BCT: Mumbai Central (Mumbai) — 9 platforms
+//   HWH: Howrah (Kolkata) — 23 platforms
+//   MAS: Chennai Central (Chennai) — 12 platforms
 //   NDLS: New Delhi (Delhi) — 16 platforms
-//   SBC : Bangalore City (Bangalore) — 10 platforms
+//   SBC: Bangalore City (Bangalore) — 10 platforms
 //
 //   --- Station Lookup ---
 //   Looking up MAS: ✓ Chennai Central (Chennai) — 12 platforms
@@ -25,8 +25,8 @@
 //
 //   --- Trains Per City ---
 //   Chennai: 4 trains
-//   Mumbai: 2 trains
 //   Bangalore: 2 trains
+//   Mumbai: 2 trains
 //   Delhi: 1 trains
 //   Kolkata: 1 trains
 //
@@ -39,21 +39,50 @@
 
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
-struct Station {
-    name: String,
-    code: String,
-    platforms: u32,
-    city: String,
-}
+// =============================================
+// TODO 1: Define the Station struct
+// =============================================
+//
+// Define a struct called `Station` with these fields:
+//   - name: String
+//   - code: String
+//   - platforms: u32
+//   - city: String
+//
+// Derive: Debug, Clone
+//
+// Example:
+//   #[derive(Debug, Clone)]
+//   struct Station { ... }
+//
+// WHY: Reinforces struct definition from Lesson 04.
 
 // =============================================
-// TODO 1: Build a station lookup
+// TODO 2: Implement Station methods
+// =============================================
+//
+// Add an `impl Station` block with two methods:
+//
+//   fn new(name: &str, code: &str, platforms: u32, city: &str) -> Self
+//     - Creates a new Station, converting each &str to String with .to_string()
+//     - Example: Station::new("Chennai Central", "MAS", 12, "Chennai")
+//
+//   fn display(&self) -> String
+//     - Returns a formatted string: "{code}: {name} ({city}) — {platforms} platforms"
+//     - Example: "MAS: Chennai Central (Chennai) — 12 platforms"
+//     - Hint: use the format!() macro
+//     - Note: the dash is an em dash (—), not a hyphen (-)
+//
+// WHY: Reinforces impl blocks and methods from Lesson 04.
+
+// =============================================
+// TODO 3: Build a station directory
 // =============================================
 //
 // fn build_directory() -> HashMap<String, Station>
 //
 // Create a HashMap keyed by station code (String) with Station values.
+// Use Station::new() to create each station.
 // Add these 5 stations:
 //
 //   Code  | Name              | City       | Platforms
@@ -67,12 +96,13 @@ struct Station {
 // Steps:
 //   1. Create an empty HashMap with HashMap::new()
 //   2. Use .insert() to add each station, keyed by code
+//      Example: directory.insert("MAS".to_string(), Station::new("Chennai Central", "MAS", 12, "Chennai"));
 //   3. Return the HashMap
 //
-// WHY: Practice basic HashMap construction.
+// WHY: Practice basic HashMap construction with .insert().
 
 // =============================================
-// TODO 2: Look up stations safely
+// TODO 4: Look up stations safely
 // =============================================
 //
 // fn lookup_station<'a>(directory: &'a HashMap<String, Station>, code: &str) -> Option<&'a Station>
@@ -82,10 +112,10 @@ struct Station {
 //
 // Hint: This is a one-liner.
 //
-// WHY: Practice .get() returning Option — the safe way to access HashMap values.
+// WHY: Reinforces Option from Lesson 06 + safe HashMap access.
 
 // =============================================
-// TODO 3: Count trains per city
+// TODO 5: Count trains per city
 // =============================================
 //
 // fn trains_per_city(
@@ -109,7 +139,7 @@ struct Station {
 // WHY: Practice the entry API counting pattern.
 
 // =============================================
-// TODO 4: Group stations by city
+// TODO 6: Group stations by city
 // =============================================
 //
 // fn stations_by_city(directory: &HashMap<String, Station>) -> HashMap<String, Vec<String>>
@@ -128,7 +158,7 @@ struct Station {
 // WHY: Practice the entry API grouping pattern (or_insert_with(Vec::new).push()).
 
 // =============================================
-// TODO 5: Display directory (sorted by code)
+// TODO 7: Display directory (sorted by code)
 // =============================================
 //
 // fn display_directory(directory: &HashMap<String, Station>)
@@ -140,15 +170,11 @@ struct Station {
 //        let mut codes: Vec<&String> = directory.keys().collect();
 //   2. Sort the Vec:
 //        codes.sort();
-//   3. Loop through sorted codes and print each station:
+//   3. Loop through sorted codes, get each station, and print using station.display():
 //        for code in &codes {
 //            let station = &directory[code.as_str()];
-//            println!("{:<4}: {} ({}) — {} platforms",
-//                code, station.name, station.city, station.platforms);
+//            println!("{}", station.display());
 //        }
-//
-// Format: "MAS : Chennai Central (Chennai) — 12 platforms"
-// Use {:<4} to left-align the code in a 4-char field.
 //
 // WHY: Practice iterating a HashMap in sorted order.
 
@@ -172,12 +198,12 @@ fn main() {
         match lookup_station(&directory, code) {
             Some(station) => {
                 println!(
-                    "Looking up {}: ✓ {} ({}) — {} platforms",
+                    "Looking up {}: \u{2713} {} ({}) \u{2014} {} platforms",
                     code, station.name, station.city, station.platforms
                 );
             }
             None => {
-                println!("Looking up {}: ✗ Not found", code);
+                println!("Looking up {}: \u{2717} Not found", code);
             }
         }
     }

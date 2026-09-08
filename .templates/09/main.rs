@@ -1,240 +1,212 @@
-// Lesson 09: Iterators — Railway Data Pipeline (SOLUTION)
+// Lesson 09: Iterators — Railway Data Pipeline
+//
+// Build a COMPLETE data pipeline for Indian Railway train records.
+// You define the struct, implement methods, construct the data, and write
+// every iterator-based operation from scratch. Nothing is pre-defined
+// except main().
+//
+// This exercise covers: .iter(), .map(), .filter(), .for_each(),
+// .enumerate(), .sum(), .max_by_key(), .take(), .collect(), .join(),
+// and combining iterators with HashMap.
 
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
-struct TrainRecord {
-    number: u32,
-    name: String,
-    from: String,
-    to: String,
-    distance_km: u32,
-    fare: f64,
-    on_time_percent: f64,
-    daily_passengers: u32,
-}
+// ---------------------------------------------------------------------------
+// TODO 1: Define the `TrainRecord` struct
+// ---------------------------------------------------------------------------
+// Fields:
+//   number: u32
+//   name: String
+//   from: String
+//   to: String
+//   distance_km: u32
+//   fare: f64
+//   on_time_percent: f64
+//   daily_passengers: u32
+//
+// Derive: Debug, Clone
+//
+// WHY: Reinforces struct definition from earlier lessons. Every subsequent
+//      TODO depends on this struct, so getting it right is essential.
+// ---------------------------------------------------------------------------
+
+// your struct here
+
+// ---------------------------------------------------------------------------
+// TODO 2: Implement `TrainRecord` methods
+// ---------------------------------------------------------------------------
+// Inside `impl TrainRecord`, define three methods:
+//
+//   fn new(number: u32, name: &str, from: &str, to: &str,
+//          distance_km: u32, fare: f64, on_time_percent: f64,
+//          daily_passengers: u32) -> Self
+//     — Constructs a new TrainRecord (convert &str args to String).
+//
+//   fn revenue(&self) -> f64
+//     — Returns fare * daily_passengers as f64.
+//       Used by top_revenue_trains (TODO 5), so this isn't busywork.
+//
+//   fn display_short(&self) -> String
+//     — Returns: "#{number} {name}: {from} → {to} ({distance_km} km, ₹{fare:.2})"
+//       Used by format_timetable (TODO 4).
+//
+// WHY: Reinforces method definition. revenue() and display_short() are
+//      consumed by later TODOs, connecting structs to iterators.
+// ---------------------------------------------------------------------------
+
+// your impl here
+
+// ---------------------------------------------------------------------------
+// TODO 3: Implement `build_records() -> Vec<TrainRecord>`
+// ---------------------------------------------------------------------------
+// Return a vec! with these 8 train records (use TrainRecord::new()):
+//
+//   number | name                       | from        | to                  | km   | fare    | on_time | passengers
+//   -------|----------------------------|-------------|---------------------|------|---------|---------|----------
+//   12001  | "Rajdhani Express"         | "Chennai"   | "New Delhi"         | 2180 | 4250.00 |  92.5   | 3000
+//   12007  | "Shatabdi Express"         | "Chennai"   | "Bangalore"         |  350 |  755.50 |  88.0   | 4500
+//   12245  | "Duronto Express"          | "Chennai"   | "Mumbai"            | 1280 | 2100.00 |  85.3   | 2200
+//   12675  | "Kovai Express"            | "Chennai"   | "Coimbatore"        |  500 |  350.00 |  72.4   | 5500
+//   16525  | "Island Express"           | "Bangalore" | "Kanyakumari"       |  890 |  625.00 |  78.9   | 3200
+//   12625  | "Thiruvananthapuram Mail"  | "Chennai"   | "Thiruvananthapuram" |  920 |  780.00 |  65.0   | 5800
+//   22501  | "Tejas Express"            | "Chennai"   | "Madurai"           |  460 | 1200.00 |  94.1   | 8000
+//   20601  | "Vande Bharat Express"     | "Chennai"   | "Bangalore"         |  350 | 1850.00 |  97.2   | 6000
+//
+// WHY: Practice building a Vec of structs using a constructor.
+// ---------------------------------------------------------------------------
 
 fn build_records() -> Vec<TrainRecord> {
-    vec![
-        TrainRecord {
-            number: 12001,
-            name: "Rajdhani Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "New Delhi".to_string(),
-            distance_km: 2180,
-            fare: 4250.00,
-            on_time_percent: 92.5,
-            daily_passengers: 3000,
-        },
-        TrainRecord {
-            number: 12007,
-            name: "Shatabdi Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Bangalore".to_string(),
-            distance_km: 350,
-            fare: 755.50,
-            on_time_percent: 88.0,
-            daily_passengers: 4500,
-        },
-        TrainRecord {
-            number: 12245,
-            name: "Duronto Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Mumbai".to_string(),
-            distance_km: 1280,
-            fare: 2100.00,
-            on_time_percent: 85.3,
-            daily_passengers: 2200,
-        },
-        TrainRecord {
-            number: 12675,
-            name: "Kovai Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Coimbatore".to_string(),
-            distance_km: 500,
-            fare: 350.00,
-            on_time_percent: 72.4,
-            daily_passengers: 5500,
-        },
-        TrainRecord {
-            number: 16525,
-            name: "Island Express".to_string(),
-            from: "Bangalore".to_string(),
-            to: "Kanyakumari".to_string(),
-            distance_km: 890,
-            fare: 625.00,
-            on_time_percent: 78.9,
-            daily_passengers: 3200,
-        },
-        TrainRecord {
-            number: 12625,
-            name: "Thiruvananthapuram Mail".to_string(),
-            from: "Chennai".to_string(),
-            to: "Thiruvananthapuram".to_string(),
-            distance_km: 920,
-            fare: 780.00,
-            on_time_percent: 65.0,
-            daily_passengers: 5800,
-        },
-        TrainRecord {
-            number: 22501,
-            name: "Tejas Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Madurai".to_string(),
-            distance_km: 460,
-            fare: 1200.00,
-            on_time_percent: 94.1,
-            daily_passengers: 8000,
-        },
-        TrainRecord {
-            number: 20601,
-            name: "Vande Bharat Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Bangalore".to_string(),
-            distance_km: 350,
-            fare: 1850.00,
-            on_time_percent: 97.2,
-            daily_passengers: 6000,
-        },
-    ]
+    todo!()
 }
 
 // ---------------------------------------------------------------------------
-// TODO 1: format_timetable
+// TODO 4: Implement `format_timetable(records: &[TrainRecord]) -> String`
+// ---------------------------------------------------------------------------
+// Use: .iter().map(|r| r.display_short()).collect::<Vec<_>>().join("\n")
+//
+// This chains three iterator operations:
+//   .map()     — transforms each record into its short display string
+//   .collect() — gathers the strings into a Vec<String>
+//   .join()    — combines them with newline separators
+//
+// WHY: .map().collect().join() is the most common iterator chain. This is
+//      the pattern you'll use constantly in real Rust code.
 // ---------------------------------------------------------------------------
 
 fn format_timetable(records: &[TrainRecord]) -> String {
-    records
-        .iter()
-        .map(|r| {
-            format!(
-                "#{} {}: {} → {} ({} km, ₹{:.2})",
-                r.number, r.name, r.from, r.to, r.distance_km, r.fare
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
+    todo!()
 }
 
 // ---------------------------------------------------------------------------
-// TODO 2: top_revenue_trains
+// TODO 5: Implement `top_revenue_trains(records: &[TrainRecord], n: usize) -> Vec<&TrainRecord>`
+// ---------------------------------------------------------------------------
+// Steps:
+//   1. Collect references into a Vec<&TrainRecord>
+//   2. Sort by revenue (use .revenue()) descending
+//   3. Take top `n` with .into_iter().take(n).collect()
+//
+// Hint: Use .sort_by() with .partial_cmp() for f64 comparison.
+//       For descending order, compare rev_b to rev_a.
+//
+// WHY: Practice sorting a collected iterator + .take() to limit results.
 // ---------------------------------------------------------------------------
 
 fn top_revenue_trains(records: &[TrainRecord], n: usize) -> Vec<&TrainRecord> {
-    let mut sorted: Vec<&TrainRecord> = records.iter().collect();
-    sorted.sort_by(|a, b| {
-        let rev_a = a.fare * a.daily_passengers as f64;
-        let rev_b = b.fare * b.daily_passengers as f64;
-        rev_b.partial_cmp(&rev_a).unwrap()
-    });
-    sorted.into_iter().take(n).collect()
+    todo!()
 }
 
 // ---------------------------------------------------------------------------
-// TODO 3: average_fare_by_route
+// TODO 6: Implement `average_fare_by_route(records: &[TrainRecord]) -> Vec<(String, f64)>`
+// ---------------------------------------------------------------------------
+// Steps:
+//   1. Create a HashMap<String, Vec<f64>> to group fares by route
+//   2. For each record, build route as format!("{} → {}", r.from, r.to)
+//   3. Use .entry(route).or_insert_with(Vec::new).push(r.fare)
+//   4. Convert the HashMap into a Vec<(String, f64)> where f64 is the average fare
+//   5. Sort alphabetically by route name
+//
+// WHY: Practice HashMap + iterators together (reinforces Lesson 08).
+//      The entry API + iterator pipeline is a very common Rust pattern.
 // ---------------------------------------------------------------------------
 
 fn average_fare_by_route(records: &[TrainRecord]) -> Vec<(String, f64)> {
-    let mut route_fares: HashMap<String, Vec<f64>> = HashMap::new();
-    for r in records {
-        let route = format!("{} → {}", r.from, r.to);
-        route_fares
-            .entry(route)
-            .or_insert_with(Vec::new)
-            .push(r.fare);
-    }
-
-    let mut result: Vec<(String, f64)> = route_fares
-        .into_iter()
-        .map(|(route, fares)| {
-            let avg = fares.iter().sum::<f64>() / fares.len() as f64;
-            (route, avg)
-        })
-        .collect();
-
-    result.sort_by(|a, b| a.0.cmp(&b.0));
-    result
+    todo!()
 }
 
 // ---------------------------------------------------------------------------
-// TODO 4: reliability_report
+// TODO 7: Implement `reliability_report(records: &[TrainRecord])`
+// ---------------------------------------------------------------------------
+// Print trains categorized by on_time_percent:
+//
+//   Excellent (>= 95%):
+//     — filter for on_time_percent >= 95.0
+//   Good (80–94.9%):
+//     — filter for on_time_percent >= 80.0 && < 95.0
+//   Needs Improvement (< 80%):
+//     — filter for on_time_percent < 80.0
+//
+// For each category:
+//   1. println! the category header
+//   2. Use .iter().filter(...).for_each(...) to print matching trains
+//   3. Format each as: "  {name} ({on_time_percent:.1}%)"
+//
+// WHY: Practice multiple .filter() passes over the same data. The
+//      .filter().for_each() pattern is useful for side-effectful iteration.
 // ---------------------------------------------------------------------------
 
 fn reliability_report(records: &[TrainRecord]) {
-    println!("Excellent (>= 95%):");
-    records
-        .iter()
-        .filter(|r| r.on_time_percent >= 95.0)
-        .for_each(|r| println!("  {} ({:.1}%)", r.name, r.on_time_percent));
-
-    println!("Good (80–94.9%):");
-    records
-        .iter()
-        .filter(|r| r.on_time_percent >= 80.0 && r.on_time_percent < 95.0)
-        .for_each(|r| println!("  {} ({:.1}%)", r.name, r.on_time_percent));
-
-    println!("Needs Improvement (< 80%):");
-    records
-        .iter()
-        .filter(|r| r.on_time_percent < 80.0)
-        .for_each(|r| println!("  {} ({:.1}%)", r.name, r.on_time_percent));
+    todo!()
 }
 
 // ---------------------------------------------------------------------------
-// TODO 5: total_stats
+// TODO 8: Implement `total_stats(records: &[TrainRecord])`
+// ---------------------------------------------------------------------------
+// Print a summary with these five stats:
+//
+//   Total distance:       .iter().map(|r| r.distance_km).sum()
+//   Total daily passengers: .iter().map(|r| r.daily_passengers).sum()
+//   Average on-time:      sum of on_time_percent / count, format as {:.2}%
+//   Most popular:         .iter().max_by_key(|r| r.daily_passengers)
+//   Longest route:        .iter().max_by_key(|r| r.distance_km)
+//
+// Expected output format:
+//   Total distance: {total} km
+//   Total daily passengers: {total}
+//   Average on-time: {avg:.2}%
+//   Most popular: {name} ({passengers} passengers/day)
+//   Longest route: {name} ({km} km)
+//
+// WHY: Practice iterator consumers — .sum(), .max_by_key() — that reduce
+//      a collection to a single value.
 // ---------------------------------------------------------------------------
 
 fn total_stats(records: &[TrainRecord]) {
-    let total_distance: u32 = records.iter().map(|r| r.distance_km).sum();
-    let total_passengers: u32 = records.iter().map(|r| r.daily_passengers).sum();
-    let avg_on_time: f64 =
-        records.iter().map(|r| r.on_time_percent).sum::<f64>() / records.len() as f64;
-    let most_popular = records.iter().max_by_key(|r| r.daily_passengers).unwrap();
-    let longest = records.iter().max_by_key(|r| r.distance_km).unwrap();
-
-    println!("Total distance: {} km", total_distance);
-    println!("Total daily passengers: {}", total_passengers);
-    println!("Average on-time: {:.2}%", avg_on_time);
-    println!(
-        "Most popular: {} ({} passengers/day)",
-        most_popular.name, most_popular.daily_passengers
-    );
-    println!(
-        "Longest route: {} ({} km)",
-        longest.name, longest.distance_km
-    );
+    todo!()
 }
 
 // ---------------------------------------------------------------------------
-// TODO 6: search_and_transform
+// TODO 9: Implement `search_and_transform(records: &[TrainRecord], min_distance: u32) -> String`
+// ---------------------------------------------------------------------------
+// Build a full pipeline:
+//   1. Filter records where distance_km >= min_distance
+//   2. Collect into a Vec and sort by fare ascending
+//   3. Enumerate (to get 1-based index)
+//   4. Map to: "{i}. {name} ({distance_km} km) — ₹{fare:.2}"
+//   5. Collect into Vec<String> and .join("\n")
+//
+// Hint: Collect filtered refs first, sort, then chain
+//       .iter().enumerate().map(...).collect::<Vec<_>>().join("\n")
+//
+// WHY: This is the capstone — filter → sort → enumerate → map → collect →
+//      join in one logical pipeline. It uses nearly everything from this lesson.
 // ---------------------------------------------------------------------------
 
 fn search_and_transform(records: &[TrainRecord], min_distance: u32) -> String {
-    let mut filtered: Vec<&TrainRecord> = records
-        .iter()
-        .filter(|r| r.distance_km >= min_distance)
-        .collect();
-
-    filtered.sort_by(|a, b| a.fare.partial_cmp(&b.fare).unwrap());
-
-    filtered
-        .iter()
-        .enumerate()
-        .map(|(i, r)| {
-            format!(
-                "{}. {} ({} km) — ₹{:.2}",
-                i + 1,
-                r.name,
-                r.distance_km,
-                r.fare
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
+    todo!()
 }
 
 // =============================================
-// main()
+// main() — DO NOT MODIFY
 // =============================================
 
 fn main() {
@@ -242,11 +214,11 @@ fn main() {
 
     let records = build_records();
 
-    // TODO 1
+    // TODO 4
     println!("\n--- Timetable ---");
     println!("{}", format_timetable(&records));
 
-    // TODO 2
+    // TODO 5
     println!("\n--- Top 3 Revenue Trains ---");
     let top3 = top_revenue_trains(&records, 3);
     for (i, t) in top3.iter().enumerate() {
@@ -254,22 +226,22 @@ fn main() {
         println!("{}. {} — ₹{:.2}/day", i + 1, t.name, revenue);
     }
 
-    // TODO 3
+    // TODO 6
     println!("\n--- Average Fare by Route ---");
     let avg_fares = average_fare_by_route(&records);
     for (route, avg) in &avg_fares {
         println!("{}: ₹{:.2}", route, avg);
     }
 
-    // TODO 4
+    // TODO 7
     println!("\n--- Reliability Report ---");
     reliability_report(&records);
 
-    // TODO 5
+    // TODO 8
     println!("\n--- Total Stats ---");
     total_stats(&records);
 
-    // TODO 6
+    // TODO 9
     println!("\n--- Long-Distance Trains (>= 500 km), Cheapest First ---");
     println!("{}", search_and_transform(&records, 500));
 }

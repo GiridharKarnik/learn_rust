@@ -2,6 +2,10 @@
 
 use std::collections::HashMap;
 
+// ---------------------------------------------------------------------------
+// TODO 1: Define the `TrainRecord` struct
+// ---------------------------------------------------------------------------
+
 #[derive(Debug, Clone)]
 struct TrainRecord {
     number: u32,
@@ -14,124 +18,162 @@ struct TrainRecord {
     daily_passengers: u32,
 }
 
+// ---------------------------------------------------------------------------
+// TODO 2: Implement `TrainRecord` methods
+// ---------------------------------------------------------------------------
+
+impl TrainRecord {
+    fn new(
+        number: u32,
+        name: &str,
+        from: &str,
+        to: &str,
+        distance_km: u32,
+        fare: f64,
+        on_time_percent: f64,
+        daily_passengers: u32,
+    ) -> Self {
+        TrainRecord {
+            number,
+            name: name.to_string(),
+            from: from.to_string(),
+            to: to.to_string(),
+            distance_km,
+            fare,
+            on_time_percent,
+            daily_passengers,
+        }
+    }
+
+    fn revenue(&self) -> f64 {
+        self.fare * self.daily_passengers as f64
+    }
+
+    fn display_short(&self) -> String {
+        format!(
+            "#{} {}: {} → {} ({} km, ₹{:.2})",
+            self.number, self.name, self.from, self.to, self.distance_km, self.fare
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// TODO 3: build_records
+// ---------------------------------------------------------------------------
+
 fn build_records() -> Vec<TrainRecord> {
     vec![
-        TrainRecord {
-            number: 12001,
-            name: "Rajdhani Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "New Delhi".to_string(),
-            distance_km: 2180,
-            fare: 4250.00,
-            on_time_percent: 92.5,
-            daily_passengers: 3000,
-        },
-        TrainRecord {
-            number: 12007,
-            name: "Shatabdi Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Bangalore".to_string(),
-            distance_km: 350,
-            fare: 755.50,
-            on_time_percent: 88.0,
-            daily_passengers: 4500,
-        },
-        TrainRecord {
-            number: 12245,
-            name: "Duronto Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Mumbai".to_string(),
-            distance_km: 1280,
-            fare: 2100.00,
-            on_time_percent: 85.3,
-            daily_passengers: 2200,
-        },
-        TrainRecord {
-            number: 12675,
-            name: "Kovai Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Coimbatore".to_string(),
-            distance_km: 500,
-            fare: 350.00,
-            on_time_percent: 72.4,
-            daily_passengers: 5500,
-        },
-        TrainRecord {
-            number: 16525,
-            name: "Island Express".to_string(),
-            from: "Bangalore".to_string(),
-            to: "Kanyakumari".to_string(),
-            distance_km: 890,
-            fare: 625.00,
-            on_time_percent: 78.9,
-            daily_passengers: 3200,
-        },
-        TrainRecord {
-            number: 12625,
-            name: "Thiruvananthapuram Mail".to_string(),
-            from: "Chennai".to_string(),
-            to: "Thiruvananthapuram".to_string(),
-            distance_km: 920,
-            fare: 780.00,
-            on_time_percent: 65.0,
-            daily_passengers: 5800,
-        },
-        TrainRecord {
-            number: 22501,
-            name: "Tejas Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Madurai".to_string(),
-            distance_km: 460,
-            fare: 1200.00,
-            on_time_percent: 94.1,
-            daily_passengers: 8000,
-        },
-        TrainRecord {
-            number: 20601,
-            name: "Vande Bharat Express".to_string(),
-            from: "Chennai".to_string(),
-            to: "Bangalore".to_string(),
-            distance_km: 350,
-            fare: 1850.00,
-            on_time_percent: 97.2,
-            daily_passengers: 6000,
-        },
+        TrainRecord::new(
+            12001,
+            "Rajdhani Express",
+            "Chennai",
+            "New Delhi",
+            2180,
+            4250.00,
+            92.5,
+            3000,
+        ),
+        TrainRecord::new(
+            12007,
+            "Shatabdi Express",
+            "Chennai",
+            "Bangalore",
+            350,
+            755.50,
+            88.0,
+            4500,
+        ),
+        TrainRecord::new(
+            12245,
+            "Duronto Express",
+            "Chennai",
+            "Mumbai",
+            1280,
+            2100.00,
+            85.3,
+            2200,
+        ),
+        TrainRecord::new(
+            12675,
+            "Kovai Express",
+            "Chennai",
+            "Coimbatore",
+            500,
+            350.00,
+            72.4,
+            5500,
+        ),
+        TrainRecord::new(
+            16525,
+            "Island Express",
+            "Bangalore",
+            "Kanyakumari",
+            890,
+            625.00,
+            78.9,
+            3200,
+        ),
+        TrainRecord::new(
+            12625,
+            "Thiruvananthapuram Mail",
+            "Chennai",
+            "Thiruvananthapuram",
+            920,
+            780.00,
+            65.0,
+            5800,
+        ),
+        TrainRecord::new(
+            22501,
+            "Tejas Express",
+            "Chennai",
+            "Madurai",
+            460,
+            1200.00,
+            94.1,
+            8000,
+        ),
+        TrainRecord::new(
+            20601,
+            "Vande Bharat Express",
+            "Chennai",
+            "Bangalore",
+            350,
+            1850.00,
+            97.2,
+            6000,
+        ),
     ]
 }
 
 // ---------------------------------------------------------------------------
-// TODO 1: format_timetable
+// TODO 4: format_timetable
 // ---------------------------------------------------------------------------
 
 fn format_timetable(records: &[TrainRecord]) -> String {
     records
         .iter()
-        .map(|r| {
-            format!(
-                "#{} {}: {} → {} ({} km, ₹{:.2})",
-                r.number, r.name, r.from, r.to, r.distance_km, r.fare
-            )
-        })
+        .map(|r| r.display_short())
         .collect::<Vec<_>>()
         .join("\n")
 }
 
 // ---------------------------------------------------------------------------
-// TODO 2: top_revenue_trains
+// TODO 5: top_revenue_trains
 // ---------------------------------------------------------------------------
 
 fn top_revenue_trains(records: &[TrainRecord], n: usize) -> Vec<&TrainRecord> {
     let mut sorted: Vec<&TrainRecord> = records.iter().collect();
     sorted.sort_by(|a, b| {
-        let rev_a = a.fare * a.daily_passengers as f64;
-        let rev_b = b.fare * b.daily_passengers as f64;
+        let rev_a = a.revenue();
+        let rev_b = b.revenue();
         rev_b.partial_cmp(&rev_a).unwrap()
     });
     sorted.into_iter().take(n).collect()
 }
 
 // ---------------------------------------------------------------------------
-// TODO 3: average_fare_by_route
+// TODO 6: average_fare_by_route
 // ---------------------------------------------------------------------------
 
 fn average_fare_by_route(records: &[TrainRecord]) -> Vec<(String, f64)> {
@@ -157,7 +199,7 @@ fn average_fare_by_route(records: &[TrainRecord]) -> Vec<(String, f64)> {
 }
 
 // ---------------------------------------------------------------------------
-// TODO 4: reliability_report
+// TODO 7: reliability_report
 // ---------------------------------------------------------------------------
 
 fn reliability_report(records: &[TrainRecord]) {
@@ -181,7 +223,7 @@ fn reliability_report(records: &[TrainRecord]) {
 }
 
 // ---------------------------------------------------------------------------
-// TODO 5: total_stats
+// TODO 8: total_stats
 // ---------------------------------------------------------------------------
 
 fn total_stats(records: &[TrainRecord]) {
@@ -206,7 +248,7 @@ fn total_stats(records: &[TrainRecord]) {
 }
 
 // ---------------------------------------------------------------------------
-// TODO 6: search_and_transform
+// TODO 9: search_and_transform
 // ---------------------------------------------------------------------------
 
 fn search_and_transform(records: &[TrainRecord], min_distance: u32) -> String {
@@ -234,7 +276,7 @@ fn search_and_transform(records: &[TrainRecord], min_distance: u32) -> String {
 }
 
 // =============================================
-// main()
+// main() — DO NOT MODIFY
 // =============================================
 
 fn main() {
@@ -242,11 +284,11 @@ fn main() {
 
     let records = build_records();
 
-    // TODO 1
+    // TODO 4
     println!("\n--- Timetable ---");
     println!("{}", format_timetable(&records));
 
-    // TODO 2
+    // TODO 5
     println!("\n--- Top 3 Revenue Trains ---");
     let top3 = top_revenue_trains(&records, 3);
     for (i, t) in top3.iter().enumerate() {
@@ -254,22 +296,22 @@ fn main() {
         println!("{}. {} — ₹{:.2}/day", i + 1, t.name, revenue);
     }
 
-    // TODO 3
+    // TODO 6
     println!("\n--- Average Fare by Route ---");
     let avg_fares = average_fare_by_route(&records);
     for (route, avg) in &avg_fares {
         println!("{}: ₹{:.2}", route, avg);
     }
 
-    // TODO 4
+    // TODO 7
     println!("\n--- Reliability Report ---");
     reliability_report(&records);
 
-    // TODO 5
+    // TODO 8
     println!("\n--- Total Stats ---");
     total_stats(&records);
 
-    // TODO 6
+    // TODO 9
     println!("\n--- Long-Distance Trains (>= 500 km), Cheapest First ---");
     println!("{}", search_and_transform(&records, 500));
 }
