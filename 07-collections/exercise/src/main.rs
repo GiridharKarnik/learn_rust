@@ -56,6 +56,13 @@
 // Fields: name (String), number (u32), speed_kmh (u32), is_active (bool)
 // Derive: Debug, Clone
 
+struct Train {
+    name: String,
+    number: u32,
+    speed_kmh: u32,
+    is_active: bool,
+}
+
 // =============================================
 // STEP 2: Implement `Train` methods
 // =============================================
@@ -63,6 +70,21 @@
 // - fn display(&self) -> String
 //     Returns: "#{number} {name} — {speed_kmh} km/h"
 //     Example: "#12001 Rajdhani Express — 130 km/h"
+
+impl Train {
+    fn new(name: &str, number: u32, speed_kmh: u32, is_active: bool) -> Self {
+        return Train {
+            name: String::from(name),
+            number,
+            speed_kmh,
+            is_active,
+        };
+    }
+
+    fn display(&self) -> String {
+        return format!("#{} {} - {} km/h", self.number, self.name, self.speed_kmh);
+    }
+}
 
 // =============================================
 // STEP 3: Implement `build_roster() -> Vec<Train>`
@@ -75,6 +97,47 @@
 //   ("Island Express",        16525, 100, false)   ← starts inactive
 //   ("Vande Bharat Express",  22436, 180, true)
 
+fn build_roster() -> Vec<Train> {
+    return vec![
+        Train {
+            name: String::from("Rajdhani Express"),
+            number: 12001,
+            speed_kmh: 130,
+            is_active: true,
+        },
+        Train {
+            name: String::from("Shatabdi Express"),
+            number: 12007,
+            speed_kmh: 150,
+            is_active: true,
+        },
+        Train {
+            name: String::from("Duronto Express"),
+            number: 12245,
+            speed_kmh: 120,
+            is_active: true,
+        },
+        Train {
+            name: String::from("Kovai Express"),
+            number: 12675,
+            speed_kmh: 110,
+            is_active: true,
+        },
+        Train {
+            name: String::from("Island Express"),
+            number: 16525,
+            speed_kmh: 100,
+            is_active: false,
+        },
+        Train {
+            name: String::from("Duronto Express"),
+            number: 22436,
+            speed_kmh: 180,
+            is_active: true,
+        },
+    ];
+}
+
 // =============================================
 // STEP 4: Implement `find_by_number`
 // =============================================
@@ -84,6 +147,10 @@
 // Return Some(&train) if found, None if not.
 // Note: parameter is &[Train] (slice), not &Vec<Train>.
 
+fn find_by_number(roster: &[Train], number: u32) -> Option<&Train> {
+    return roster.iter().find(|train| train.number == number);
+}
+
 // =============================================
 // STEP 5: Implement `active_trains`
 // =============================================
@@ -91,6 +158,13 @@
 //
 // Return a new Vec with references to only the active trains.
 // Use a for loop: push matching trains into a new Vec.
+
+fn active_trains(roster: &[Train]) -> Vec<&Train> {
+    return roster
+        .iter()
+        .filter(|train| train.is_active == true)
+        .collect();
+}
 
 // =============================================
 // STEP 6: Implement `display_sorted_by_speed`
@@ -100,6 +174,14 @@
 // Sort the roster by speed_kmh DESCENDING (fastest first), then print each.
 // Hint: roster.sort_by(|a, b| b.speed_kmh.cmp(&a.speed_kmh))
 // Then loop and print: "  {train.display()}"
+
+fn display_sorted_by_speed(roster: &mut Vec<Train>) {
+    roster.sort_by(|a, b| b.speed_kmh.cmp(&a.speed_kmh));
+
+    roster
+        .iter()
+        .for_each(|train| println!("{} [{} km/hr]", train.name, train.speed_kmh));
+}
 
 // =============================================
 // STEP 7: Implement `deactivate_slow_trains`
@@ -113,6 +195,14 @@
 // Phase 2 — Remove: count inactive trains, then roster.retain(|t| t.is_active)
 //   Print: "  Removed {count} inactive trains."
 
+fn deactivate_slow_trains(roster: &mut Vec<Train>, min_speed: u32) {
+    roster.iter_mut().for_each(|train| {
+        if train.speed_kmh < min_speed {
+            train.is_active = false
+        }
+    });
+}
+
 // =============================================
 // STEP 8: Write `fn main()`
 // =============================================
@@ -124,21 +214,70 @@
 //    Loop through &roster, print each: "  {display} [{status}]"
 //    where status is "active" or "inactive"
 //
-// 3. Print "--- Find Train ---"
-//    Search for #12007 — print found message or "Not found"
-//    Search for #99999 — print found message or "Not found"
-//    Use match on find_by_number()
+
 //
-// 4. Print "--- Active Trains ---"
-//    Call active_trains(), loop and print each
+
 //
-// 5. Print "--- Sorted by Speed (fastest first) ---"
-//    Call display_sorted_by_speed()
+
 //
-// 6. Print "--- Deactivate & Clean Up (min speed: 115 km/h) ---"
-//    Call deactivate_slow_trains() with min_speed 115
-//    Print remaining roster with count and status
 
 fn main() {
-    // Your code here
+    println!("=== TRAIN ROSTER MANAGER ===");
+
+    let mut full_train_roster = build_roster();
+    println!(
+        "--- Full Roster ({} trains) ---",
+        full_train_roster.iter().len()
+    );
+
+    for train in &full_train_roster {
+        let status = if train.is_active {
+            "active"
+        } else {
+            "inactive"
+        };
+
+        println!("  {} [{}]", train.display(), status);
+    }
+
+    // 3. Print "--- Find Train ---"
+    //    Search for #12007 — print found message or "Not found"
+    //    Search for #99999 — print found message or "Not found"
+    //    Use match on find_by_number()
+    println!("--- Find Train ---");
+
+    let train_12007 = find_by_number(&full_train_roster, 12007);
+
+    match train_12007 {
+        Some(train) => println!("Found {} ({}) km/hr", train.name, train.speed_kmh),
+        None => println!("Not found"),
+    }
+
+    // 4. Print "--- Active Trains ---"
+    //    Call active_trains(), loop and print each
+    println!("--- Active Trains ---");
+
+    let active_trains = active_trains(&full_train_roster);
+
+    active_trains.iter().for_each(|active_train| {
+        print!("{} [{} km/hr]", active_train.name, active_train.speed_kmh);
+    });
+
+    // 5. Print "--- Sorted by Speed (fastest first) ---"
+    //    Call display_sorted_by_speed()
+    println!("--- Sorted by Speed (fastest first) ---");
+    display_sorted_by_speed(&mut full_train_roster);
+
+    // 6. Print "--- Deactivate & Clean Up (min speed: 115 km/h) ---"
+    //    Call deactivate_slow_trains() with min_speed 115
+    //    Print remaining roster with count and status
+    println!("--- Deactivate & Clean Up (min speed: 115 km/h) ---");
+    deactivate_slow_trains(&mut full_train_roster, 115);
+
+    println!("{} fast trains available", full_train_roster.iter().count());
+    full_train_roster.iter().for_each(|t: &Train| {
+        if t.is_active {
+            println!("fast train {}, [{} km/hr]", t.name, t.speed_kmh);
+        }
+    });
 }

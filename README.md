@@ -33,8 +33,9 @@ XX-lesson-name/
 | 06  | `06-option-result-and-error-handling` | Option, Result & Error Handling |
 | 07  | `07-collections` | Vec & Slices |
 | 08  | `08-hashmaps` | HashMap |
-| 09  | `09-iterators` | Iterators |
-| 10  | *Coming soon* | Traits & Generics |
+| 09  | `09-panics-and-defensive-programming` | Panics & Defensive Programming |
+| 10  | `10-iterators` | Iterators |
+| 11  | *Coming soon* | Traits & Generics |
 
 ## Prerequisites
 
