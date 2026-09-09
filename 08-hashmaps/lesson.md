@@ -506,7 +506,7 @@ wins). Make sure values are unique before inverting.
 | Size | `map.size` or `Object.keys(obj).length` | `map.len()` |
 | Iterate | `for (const [k, v] of map)` | `for (k, v) in &map` |
 | Key types | Anything (Map) / strings only (Object) | Must impl `Eq + Hash` |
-| Missing key | `undefined` (silent!) | `Option::None` (explicit!) |
+| Missing key | `Map.get()` returns `V \| undefined` — TS strict mode forces handling (not silent in TS, only in plain JS) | `Option::None` (explicit!) |
 | Insert-if-absent | Manual check or `??=` | `entry().or_insert()` 🔥 |
 
 The biggest win in Rust: the Entry API has no real equivalent in JS. You'd write:
@@ -520,8 +520,9 @@ map.set(key, map.get(key)! + 1);
 *map.entry(key).or_insert(0) += 1;
 ```
 
-And Rust's `Option` return from `.get()` means you can't accidentally use `undefined`
-where you expected a value. The compiler forces you to handle the "not found" case.
+Rust's `Option` return from `.get()` forces you to handle the "not found" case at
+compile time — similar to how TS strict mode makes you check for `undefined`, but
+enforced at the type-system level with no escape hatch short of an explicit `.unwrap()`.
 
 ---
 

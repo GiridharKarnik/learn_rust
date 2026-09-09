@@ -345,7 +345,7 @@ twist.
 | `arr.map(fn)`                 | `arr.iter().map(fn).collect()`          | Rust is lazy, needs `.collect()`  |
 | `arr.filter(fn)`              | `arr.iter().filter(fn).collect()`       | Same                              |
 | `arr.reduce(fn, init)`        | `arr.iter().fold(init, fn)`             | `.fold()` takes initial value first |
-| `arr.find(fn)`                | `arr.iter().find(fn)`                   | Returns `Option`, not `undefined` |
+| `arr.find(fn)`                | `arr.iter().find(fn)`                   | Returns `Option<T>` — similar to TS's `T \| undefined` with `strictNullChecks`, but enforced at runtime too |
 | `arr.some(fn)` / `arr.every(fn)` | `arr.iter().any(fn)` / `arr.iter().all(fn)` | Same idea                |
 | `arr.forEach(fn)`             | `arr.iter().for_each(fn)`               | Same                              |
 | `arr.flat()`                  | `arr.iter().flatten().collect()`        | Same idea, lazy                   |

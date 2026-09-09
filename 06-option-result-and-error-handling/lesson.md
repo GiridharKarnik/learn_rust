@@ -20,6 +20,10 @@ let train = findTrain(12345);
 console.log(train.name);  // 💥 TypeError: Cannot read property 'name' of undefined
 ```
 
+> **TypeScript note:** With `strictNullChecks`, TypeScript catches this at compile time — you
+> can't use `train.name` without checking for `undefined` first. But the check is erased at
+> runtime. Rust's `Option` enforces it at both compile time *and* runtime.
+
 **Python:**
 ```python
 train = find_train(12345)
@@ -613,12 +617,14 @@ If you're coming from TypeScript, here's how the concepts map:
 | `try { ... } catch (e) { ... }` | `match result { Ok(v) => ..., Err(e) => ... }` | Error handling |
 | `throw new Error(...)` | `Err(...)` | Creating an error |
 | `async function` + `try/catch` | `Result<T, E>` + `?` | Error propagation |
-| No equivalent | `?` operator | Auto-propagate — TS has nothing like this |
+| No equivalent for error propagation (TS has `?.` and `??` for null-chaining, but nothing for automatic Result-style error propagation) | `?` operator | Auto-propagate — TS has nothing like this |
 
 ### The big difference
 
-In TypeScript, error handling is **opt-in**. You can ignore errors, skip `try/catch`,
-and the code still compiles. Errors surface at runtime, in production.
+For exceptions (`try/catch`), TypeScript error handling is **opt-in**. You can ignore errors,
+skip `try/catch`, and the code still compiles. For `null`/`undefined`, TypeScript strict mode
+**forces handling**, similar to `Option`. Rust goes further: both null (`Option`) AND errors
+(`Result`) are mandatory in the type system.
 
 In Rust, error handling is **mandatory**. If a function returns `Result<T, E>`, you
 **must** handle the `Err` case before you can use the `Ok` value. The compiler

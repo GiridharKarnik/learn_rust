@@ -465,15 +465,16 @@ and functions use `match` on that state to determine behavior.
 |------------|------|
 | `type Status = "onTime" \| "delayed" \| "cancelled"` | `enum Status { OnTime, Delayed, Cancelled }` |
 | Discriminated unions with `type` field | Enums with data — same concept, cleaner syntax |
-| `switch (status) { ... }` without exhaustive check | `match` — compiler enforces every variant |
-| Extra fields may be present on wrong types | Each variant carries exactly its own data |
-| Runtime: typo in string union goes uncaught | Compile time: typo in variant name is an error |
-| `switch` fall-through is a footgun | `match` arms don't fall through — ever |
-| `default:` catches new cases silently | `_` catch-all is explicit; without it, new variants cause compiler errors |
+| `switch` not exhaustive by default (TS can enforce with never-guard pattern) | `match` — compiler enforces every variant |
+| Types erased at runtime — structural typing means extra fields exist but TS prevents wrong access after narrowing | Each variant carries exactly its own data |
+| TS catches typos at compile time; types erased at runtime | Compile time: typo in variant name is an error |
+| `switch` can fall through (TS has `noFallthroughCasesInSwitch` flag) | `match` arms don't fall through — ever |
+| Without `default`, TS can enforce exhaustiveness (with never-guard). Rust enforces it by default without `_` | `_` catch-all is explicit; without it, new variants cause compiler errors |
 
 The biggest difference: TypeScript's type checking happens at compile time but
-**disappears at runtime**. Rust's enums are real types that exist at every stage.
-There's no "just trust me, it'll be fine" — the compiler verifies it.
+**types are erased at runtime** — there's no runtime representation of your union types.
+Rust's enums are real types that exist at every stage — compile time *and* runtime.
+Both languages catch type errors before you ship, but Rust's types survive into the binary.
 
 ---
 

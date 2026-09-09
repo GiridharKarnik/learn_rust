@@ -55,8 +55,8 @@ Now let's focus on Vec, since that's what you'll use most.
 
 ## 1. Vec\<T\> — The Growable Array
 
-Like JavaScript arrays but typed — every element must be the same type, and the Vec *owns*
-its contents on the heap.
+Like TypeScript arrays — every element must be the same type. The difference: Rust owns the data
+on the heap, enforces rules at runtime too, and there's no garbage collector.
 
 ### Creating
 
@@ -275,8 +275,8 @@ Rust never silently copies heap data — `.clone()` is always explicit.
 
 | Feature | TypeScript `Array` | Rust `Vec<T>` |
 |---|---|---|
-| Type safety | `any[]` allowed | Single type `T` enforced at compile time |
-| Bounds check | `arr[99]` → `undefined` | `vec[99]` → **panic**, `.get(99)` → `None` |
+| Type safety | Typed (`string[]`, `Train[]`), but types erased at runtime | Single type `T` enforced at compile time |
+| Bounds check | `arr[99]` → `undefined` at runtime (TS can flag with `noUncheckedIndexedAccess`) | `vec[99]` → **panic**, `.get(99)` → `None` |
 | Push/pop | `.push()` / `.pop()` | `.push()` / `.pop()` (returns `Option<T>`!) |
 | Remove at index | `.splice(i, 1)` | `.remove(i)` |
 | Filter in place | `arr = arr.filter(...)` (new array) | `.retain(\|x\| ...)` (in place) |

@@ -45,6 +45,13 @@
 // Fields: name (String), code (String), platforms (u32), city (String)
 // Derive: Debug, Clone
 
+struct Station {
+    name: String,
+    code: String,
+    platforms: u32,
+    city: String,
+}
+
 // =============================================
 // STEP 2: Implement `Station` methods
 // =============================================
