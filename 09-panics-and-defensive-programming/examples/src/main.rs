@@ -18,12 +18,12 @@ fn main() {
 
     // --- unwrap() on None ---
     // UNCOMMENT TO SEE PANIC:
-    // let next_train: Option<&str> = None;
-    // let name = next_train.unwrap();
+    let next_train: Option<&str> = None;
+    let name = next_train.unwrap();
 
     // --- unwrap() on Err ---
     // UNCOMMENT TO SEE PANIC:
-    // let platform: i32 = "platform_three".parse().unwrap();
+    let platform: i32 = "platform_three".parse().unwrap();
 
     // --- Index out of bounds ---
     // UNCOMMENT TO SEE PANIC:

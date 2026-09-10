@@ -73,21 +73,69 @@ use std::collections::HashMap;
 //   number: u32, name: String, from: String, to: String,
 //   distance_km: u32, fare: f64, on_time_percent: f64, daily_passengers: u32
 // Derive: Debug, Clone
+#[derive(Debug, Clone)]
+struct TrainRecord {
+    number: u32,
+    name: String,
+    from: String,
+    to: String,
+    distance_km: u32,
+    fare: f64,
+    on_time_percent: f64,
+    daily_passengers: u32,
+}
 
 // =============================================
 // STEP 2: Implement `TrainRecord` methods
 // =============================================
-// - fn new(number: u32, name: &str, from: &str, to: &str,
-//          distance_km: u32, fare: f64, on_time_percent: f64,
-//          daily_passengers: u32) -> Self
-//
-// - fn revenue(&self) -> f64
-//     Returns: fare * daily_passengers as f64
-//     Used by top_revenue_trains — not busywork.
-//
-// - fn display_short(&self) -> String
-//     Returns: "#{number} {name}: {from} → {to} ({distance_km} km, ₹{fare:.2})"
-//     Used by format_timetable — not busywork.
+impl TrainRecord {
+    // - fn new(number: u32, name: &str, from: &str, to: &str,
+    //          distance_km: u32, fare: f64, on_time_percent: f64,
+    //          daily_passengers: u32) -> Self
+    fn new(
+        number: u32,
+        name: &str,
+        from: &str,
+        to: &str,
+        distance_km: u32,
+        fare: f64,
+        on_time_percent: f64,
+        daily_passengers: u32,
+    ) -> Self {
+        TrainRecord {
+            number,
+            name: name.to_string(),
+            from: from.to_string(),
+            to: to.to_string(),
+            distance_km,
+            fare,
+            on_time_percent,
+            daily_passengers,
+        }
+    }
+
+    // - fn revenue(&self) -> f64
+    //     Returns: fare * daily_passengers as f64
+    //     Used by top_revenue_trains — not busywork.
+    fn revenue(&self) -> f64 {
+        self.fare * self.daily_passengers as f64
+    }
+
+    // - fn display_short(&self) -> String
+    //     Returns: "#{number} {name}: {from} → {to} ({distance_km} km, ₹{fare:.2})"
+    //     Used by format_timetable — not busywork.
+    fn display_short(&self) -> String {
+        format!(
+            "#{number} {name}: {from} → {to} ({distance_km} km, ₹{fare:.2})",
+            number = self.number,
+            name = self.name,
+            from = self.from,
+            to = self.to,
+            distance_km = self.distance_km,
+            fare = self.fare
+        )
+    }
+}
 
 // =============================================
 // STEP 3: Implement `build_records() -> Vec<TrainRecord>`
@@ -102,6 +150,91 @@ use std::collections::HashMap;
 //   (22501, "Tejas Express",           "Chennai", "Madurai",            460, 1200.00, 94.1, 8000)
 //   (20601, "Vande Bharat Express",    "Chennai", "Bangalore",          350, 1850.00, 97.2, 6000)
 
+fn build_records() -> Vec<TrainRecord> {
+    vec![
+        TrainRecord {
+            number: 12001,
+            name: "Rajdhani Express".to_string(),
+            from: "Chennai".to_string(),
+            to: "New Delhi".to_string(),
+            distance_km: 2180,
+            fare: 4250.00,
+            on_time_percent: 92.5,
+            daily_passengers: 3000,
+        },
+        TrainRecord {
+            number: 12007,
+            name: "Shatabdi Express".to_string(),
+            from: "Chennai".to_string(),
+            to: "Bangalore".to_string(),
+            distance_km: 350,
+            fare: 755.50,
+            on_time_percent: 88.0,
+            daily_passengers: 4500,
+        },
+        TrainRecord {
+            number: 12245,
+            name: "Duronto Express".to_string(),
+            from: "Chennai".to_string(),
+            to: "Mumbai".to_string(),
+            distance_km: 1280,
+            fare: 2100.00,
+            on_time_percent: 85.3,
+            daily_passengers: 2200,
+        },
+        TrainRecord {
+            number: 12675,
+            name: "Kovai Express".to_string(),
+            from: "Chennai".to_string(),
+            to: "Coimbatore.to_string()",
+            distance_km: 500,
+            fare: 350.00,
+            on_time_percent: 72.4,
+            daily_passengers: 5500,
+        },
+        TrainRecord {
+            number: 16525,
+            name: "Island Express".to_string(),
+            from: "Bangalore".to_string(),
+            to: "Kanyakumari".to_string(),
+            distance_km: 890,
+            fare: 625.00,
+            on_time_percent: 78.9,
+            daily_passengers: 3200,
+        },
+        TrainRecord {
+            number: 12625,
+            name: "Thiruvananthapuram Mail".to_string(),
+            from: "Chennai".to_string(),
+            to: "Thiruvananthapuram".to_string(),
+            distance_km: 920,
+            fare: 780.00,
+            on_time_percent: 65.0,
+            daily_passengers: 5800,
+        },
+        TrainRecord {
+            number: 22501,
+            name: "Tejas Express".to_string(),
+            from: "Chennai".to_string(),
+            to: "Madurai".to_string(),
+            distance_km: 460,
+            fare: 1200.00,
+            on_time_percent: 94.1,
+            daily_passengers: 8000,
+        },
+        TrainRecord {
+            number: 20601,
+            name: "Vande Bharat Express".to_string(),
+            from: "Chennai".to_string(),
+            to: "Bangalore".to_string(),
+            distance_km: 350,
+            fare: 1850.00,
+            on_time_percent: 97.2,
+            daily_passengers: 6000,
+        },
+    ]
+}
+
 // =============================================
 // STEP 4: Implement `format_timetable`
 // =============================================
@@ -110,6 +243,13 @@ use std::collections::HashMap;
 // Use: records.iter().map(|r| r.display_short()).collect::<Vec<_>>().join("\n")
 // This is the most common iterator pattern: .map().collect().join()
 
+fn format_timetable(records: &[TrainRecord]) -> String {
+    records
+        .iter()
+        .map(|r| r.display_short())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
 // =============================================
 // STEP 5: Implement `top_revenue_trains`
 // =============================================
@@ -117,6 +257,13 @@ use std::collections::HashMap;
 //
 // Collect into Vec<&TrainRecord>, sort by revenue() descending,
 // then take first n. Return as Vec.
+fn top_revenue_trains(records: &[TrainRecord], n: usize) -> Vec<&TrainRecord> {
+    let mut sorted: Vec<&TrainRecord> = records.iter().collect();
+
+    sorted.sort_by(|a, b| b.revenue().partial_cmp(&a.revenue()).unwrap());
+
+    return sorted;
+}
 
 // =============================================
 // STEP 6: Implement `average_fare_by_route`
@@ -130,6 +277,28 @@ use std::collections::HashMap;
 //   3. Sort by route name
 // This combines HashMap (Lesson 08) with iterators.
 
+fn average_fare_by_route(records: &[TrainRecord]) -> Vec<(String, f64)> {
+    let mut route_fares: HashMap<String, Vec<f64>> = HashMap::new();
+    for r in records {
+        let route = format!("{} → {}", r.from, r.to);
+        route_fares
+            .entry(route)
+            .or_insert_with(Vec::new)
+            .push(r.fare);
+    }
+
+    let mut result: Vec<(String, f64)> = route_fares
+        .into_iter()
+        .map(|(route, fares)| {
+            let avg = fares.iter().sum::<f64>() / fares.len() as f64;
+            (route, avg)
+        })
+        .collect();
+
+    result.sort_by(|a, b| a.0.cmp(&b.0));
+    result
+}
+
 // =============================================
 // STEP 7: Implement `reliability_report`
 // =============================================
@@ -140,6 +309,36 @@ use std::collections::HashMap;
 //   Good (80–94.9%): filter and print
 //   Needs Improvement (< 80%): filter and print
 // Use .filter().for_each() for each category.
+fn reliability_report(records: &[TrainRecord]) {
+    let mut service_tiers: HashMap<&str, Vec<&TrainRecord>> = HashMap::new();
+
+    for record in records {
+        let key = if record.on_time_percent >= 95.0 {
+            "Excellent"
+        } else if record.on_time_percent >= 80.0 {
+            "Good"
+        } else {
+            "Needs Improvement"
+        };
+
+        service_tiers.entry(key).or_insert_with(Vec::new).push(record);
+    }
+
+    println!("Excellent (>= 95%):");
+    for t in service_tiers.get("Excellent").unwrap_or(&vec![]) {
+        println!("  {} ({:.1}%)", t.name, t.on_time_percent);
+    }
+
+    println!("Good (80–94.9%):");
+    for t in service_tiers.get("Good").unwrap_or(&vec![]) {
+        println!("  {} ({:.1}%)", t.name, t.on_time_percent);
+    }
+
+    println!("Needs Improvement (< 80%):");
+    for t in service_tiers.get("Needs Improvement").unwrap_or(&vec![]) {
+        println!("  {} ({:.1}%)", t.name, t.on_time_percent);
+    }
+}
 
 // =============================================
 // STEP 8: Implement `total_stats`

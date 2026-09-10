@@ -16,11 +16,17 @@ get_folder() {
     08)       echo "08-hashmaps" ;;
     09)       echo "09-panics-and-defensive-programming" ;;
     10)       echo "10-iterators" ;;
+    11)       echo "11-traits-and-generics" ;;
+    12)       echo "12-json-serde" ;;
+    13)       echo "13-error-handling-thiserror" ;;
+    14)       echo "14-async-tokio" ;;
+    15)       echo "15-shared-state" ;;
+    16)       echo "16-sql-sqlx" ;;
     *)        echo "" ;;
   esac
 }
 
-ALL_KEYS="01 02 02-bonus 03 04 05 06 07 08 09 10"
+ALL_KEYS="01 02 02-bonus 03 04 05 06 07 08 09 10 11 12 13 14 15 16"
 
 reset_lesson() {
   local key="$1"

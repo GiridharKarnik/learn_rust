@@ -35,7 +35,12 @@ XX-lesson-name/
 | 08  | `08-hashmaps` | HashMap |
 | 09  | `09-panics-and-defensive-programming` | Panics & Defensive Programming |
 | 10  | `10-iterators` | Iterators |
-| 11  | *Coming soon* | Traits & Generics |
+| 11  | `11-traits-and-generics` | Traits & Generics |
+| 12  | `12-json-serde` | JSON Handling (serde) |
+| 13  | `13-error-handling-thiserror` | Error Handling (thiserror) |
+| 14  | `14-async-tokio` | Async Execution (tokio) |
+| 15  | `15-shared-state` | Shared State (Arc, Mutex) |
+| 16  | `16-sql-sqlx` | Compile-time SQL (sqlx) |
 
 ## Prerequisites
 

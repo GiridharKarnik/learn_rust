@@ -45,6 +45,8 @@
 // Fields: name (String), code (String), platforms (u32), city (String)
 // Derive: Debug, Clone
 
+use std::collections::HashMap;
+
 struct Station {
     name: String,
     code: String,
@@ -59,6 +61,23 @@ struct Station {
 // - fn display(&self) -> String
 //     Returns: "{code}: {name} ({city}) — {platforms} platforms"
 //     Example: "MAS: Chennai Central (Chennai) — 12 platforms"
+impl Station {
+    fn new(name: &str, code: &str, platforms: u32, city: &str) -> Self {
+        return Station {
+            name: name.to_string(),
+            code: code.to_string(),
+            platforms,
+            city: city.to_string(),
+        };
+    }
+
+    fn display(&self) -> String {
+        return format!(
+            "{}: {} ({}) — {} platforms",
+            self.code, self.name, self.city, self.platforms
+        );
+    }
+}
 
 // =============================================
 // STEP 3: Implement `build_directory() -> HashMap<String, Station>`
@@ -74,6 +93,61 @@ struct Station {
 // Use: let mut dir = HashMap::new();
 //      dir.insert("MAS".to_string(), Station::new(...));
 // Don't forget: use std::collections::HashMap;
+fn build_directory() -> HashMap<String, Station> {
+    let mut station_directory: HashMap<String, Station> = HashMap::new();
+
+    station_directory.insert(
+        "MAS".to_string(),
+        Station {
+            name: "Chennai Central".to_string(),
+            code: "MAS".to_string(),
+            platforms: 12,
+            city: "Chennai".to_string(),
+        },
+    );
+
+    station_directory.insert(
+        "SBC".to_string(),
+        Station {
+            name: "Bangalore City".to_string(),
+            code: "SBC".to_string(),
+            platforms: 10,
+            city: "Bangalore".to_string(),
+        },
+    );
+
+    station_directory.insert(
+        "NDLS".to_string(),
+        Station {
+            name: "New Delhi".to_string(),
+            code: "NDLS".to_string(),
+            platforms: 16,
+            city: "New Delhi".to_string(),
+        },
+    );
+
+    station_directory.insert(
+        "BCT".to_string(),
+        Station {
+            name: "Mumbai Central".to_string(),
+            code: "BCT".to_string(),
+            platforms: 9,
+            city: "Mumbai".to_string(),
+        },
+    );
+
+    station_directory.insert(
+        "HWH".to_string(),
+        Station {
+            name: "Howrah".to_string(),
+            code: "HWH".to_string(),
+            platforms: 0,
+            city: "Kolkata".to_string(),
+        },
+    );
+
+    return station_directory;
+}
 
 // =============================================
 // STEP 4: Implement `lookup_station`
@@ -82,6 +156,9 @@ struct Station {
 //
 // Use directory.get(code) — returns Option<&Station>.
 // This is a one-liner.
+fn lookup_station<'a>(directory: &'a HashMap<String, Station>, code: &str) -> Option<&'a Station> {
+    return directory.get(code);
+}
 
 // =============================================
 // STEP 5: Implement `trains_per_city`
@@ -90,8 +167,7 @@ struct Station {
 //
 // `trains` is a list of (from_code, to_code) pairs.
 // Count how many trains DEPART from each city.
-//
-// Steps:
+// // Steps:
 //   1. Create empty HashMap for counts
 //   2. For each (from_code, _) in trains:
 //      - Look up from_code in directory to get the city
@@ -99,6 +175,21 @@ struct Station {
 //   3. Return counts
 //
 // Skip any from_code not found in the directory.
+
+fn trains_per_city(
+    directory: &HashMap<String, Station>,
+    trains: &[(String, String)],
+) -> HashMap<String, u32> {
+    let mut train_counts: HashMap<String, u32> = HashMap::new();
+
+    for (from_code, _to_code) in trains {
+        if let Some(station) = directory.get(from_code) {
+            *train_counts.entry(station.city.clone()).or_insert(0) += 1;
+        }
+    }
+
+    return train_counts;
+}
 
 // =============================================
 // STEP 6: Implement `stations_by_city`
@@ -111,6 +202,19 @@ struct Station {
 //   grouped.entry(station.city.clone())
 //       .or_insert_with(Vec::new)
 //       .push(station.name.clone());
+
+fn stations_by_city(directory: &HashMap<String, Station>) -> HashMap<String, Vec<String>> {
+    let mut grouped: HashMap<String, Vec<String>> = HashMap::new();
+
+    for station in directory.values() {
+        grouped
+            .entry(station.city.clone())
+            .or_insert_with(Vec::new)
+            .push(station.name.clone());
+    }
+
+    return grouped;
+}
 
 // =============================================
 // STEP 7: Implement `display_directory`
