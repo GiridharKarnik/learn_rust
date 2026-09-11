@@ -87,6 +87,10 @@
 //     #12245 Duronto Express
 //     #22501 Tejas Express
 
+use std::collections::BTreeMap;
+
+use serde::{Deserialize, Serialize};
+
 // =============================================
 // STEP 1: Define the `TrainStatus` enum
 // =============================================
@@ -100,6 +104,13 @@
 //
 // This makes OnTime serialize as: {"type":"OnTime"}
 // and Delayed as: {"type":"Delayed","minutes":45}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type")]
+enum TrainStatus {
+    OnTime,
+    Delayed { minutes: u32 },
+    Cancelled { reason: String },
+}
 
 // =============================================
 // STEP 2: Define the `Train` struct
@@ -116,6 +127,16 @@
 // Add:    #[serde(rename_all = "camelCase")]
 //         This converts snake_case field names to camelCase in JSON.
 //         So speed_kmh becomes "speedKmh" in JSON output.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+struct Train {
+    number: u32,
+    name: String,
+    from: String,
+    to: String,
+    status: TrainStatus,
+    speed_kmh: Option<f64>,
+}
 
 // =============================================
 // STEP 3: Implement `serialize_trains`
@@ -125,6 +146,10 @@
 // Use serde_json::to_string_pretty(trains) to get formatted JSON.
 // Map the serde_json error to String using .map_err(|e| e.to_string()).
 
+fn serialise_trains(trains: &[Train]) -> Result<String, String> {
+    serde_json::to_string_pretty(trains).map_err(|e| e.to_string())
+}
+
 // =============================================
 // STEP 4: Implement `deserialize_trains`
 // =============================================
@@ -133,6 +158,10 @@
 // Use serde_json::from_str(json) to parse JSON into Vec<Train>.
 // Map the error to String.
 
+fn deserialize_trains(json: &str) -> Result<Vec<Train>, String> {
+    serde_json::from_str(json).map_err(|e| e.to_string())
+}
+
 // =============================================
 // STEP 5: Implement `find_delayed`
 // =============================================
@@ -140,6 +169,13 @@
 //
 // Filter trains where status is Delayed (any number of minutes).
 // Hint: use matches!(t.status, TrainStatus::Delayed { .. })
+
+fn find_delayed(trains: &[Train]) -> Vec<&Train> {
+    trains
+        .iter()
+        .filter(|t| matches!(t.status, TrainStatus::Delayed { .. }))
+        .collect()
+}
 
 // =============================================
 // STEP 6: Implement `to_summary_json`
@@ -153,6 +189,24 @@
 // Keys: "total", "on_time", "delayed", "cancelled"
 // Serialize to pretty JSON and return.
 
+fn to_summary_json(trains: &[Train]) -> Result<String, String> {
+    let mut map: BTreeMap<&str, usize> = BTreeMap::new();
+
+    for train in trains {
+        let key: &str = match train.status {
+            TrainStatus::Cancelled { .. } => "cancelled",
+            TrainStatus::Delayed { .. } => "delayed",
+            TrainStatus::OnTime => "on_time",
+        };
+
+        *map.entry(key).or_insert(0) += 1;
+    }
+
+    map.insert("total", trains.len());
+
+    serde_json::to_string_pretty(&map).map_err(|e| e.to_string())
+}
+
 // =============================================
 // STEP 7: Implement `merge_json_trains`
 // =============================================
@@ -161,6 +215,15 @@
 // 1. Deserialize both JSON strings into Vec<Train>
 // 2. Combine them (extend the first with the second)
 // 3. Serialize back to pretty JSON
+
+fn merge_json_trains(json1: &str, json2: &str) -> Result<String, String> {
+    let mut train1 = serde_json::from_str::<Vec<Train>>(json1).map_err(|e| e.to_string())?;
+    let train2 = serde_json::from_str::<Vec<Train>>(json2).map_err(|e| e.to_string())?;
+
+    train1.extend(train2);
+
+    return serde_json::to_string(&train1).map_err(|e| e.to_string());
+}
 
 // =============================================
 // STEP 8: Write `fn main()`

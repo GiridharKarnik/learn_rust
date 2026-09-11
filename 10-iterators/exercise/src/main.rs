@@ -310,6 +310,7 @@ fn average_fare_by_route(records: &[TrainRecord]) -> Vec<(String, f64)> {
 //   Needs Improvement (< 80%): filter and print
 // Use .filter().for_each() for each category.
 fn reliability_report(records: &[TrainRecord]) {
+    //first group the trains into a new hashmap with keys Excellent, Good and Needs Improvement
     let mut service_tiers: HashMap<&str, Vec<&TrainRecord>> = HashMap::new();
 
     for record in records {
@@ -321,7 +322,10 @@ fn reliability_report(records: &[TrainRecord]) {
             "Needs Improvement"
         };
 
-        service_tiers.entry(key).or_insert_with(Vec::new).push(record);
+        service_tiers
+            .entry(key)
+            .or_insert_with(Vec::new)
+            .push(record);
     }
 
     println!("Excellent (>= 95%):");
@@ -351,6 +355,10 @@ fn reliability_report(records: &[TrainRecord]) {
 //   Average on-time: .map(|r| r.on_time_percent).sum::<f64>() / count
 //   Most popular: .max_by_key(|r| r.daily_passengers)
 //   Longest route: .max_by_key(|r| r.distance_km)
+
+fn total_stats(records: &[TrainRecord]) {
+    let total_distance = records.iter().map(|r| r.distance_km).sum::<u32>();
+}
 
 // =============================================
 // STEP 9: Implement `search_and_transform`
