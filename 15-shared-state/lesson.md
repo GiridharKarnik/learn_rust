@@ -1,5 +1,7 @@
 # Lesson 15 — Shared State: Arc, Mutex, and Friends
 
+> ⏱️ Estimated reading time: 18 minutes
+
 In TypeScript, you never worry about two pieces of code writing to the same object at
 the same time — JavaScript is single-threaded, so data races simply can't happen. In Rust,
 the moment you spawn threads or async tasks, the compiler *forces* you to prove that shared

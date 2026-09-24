@@ -1,5 +1,7 @@
 # Lesson 12 — JSON Handling with Serde
 
+> ⏱️ Estimated reading time: 15 minutes
+
 In TypeScript, JSON is effortless — `JSON.parse()` and `JSON.stringify()` just work. But
 they give you `any`, and you're on your own for validation. Rust flips this: you tell the
 compiler *exactly* what shape your data has, and Serde handles the rest — with full type

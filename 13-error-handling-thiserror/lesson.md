@@ -1,5 +1,7 @@
 # Lesson 13: Error Handling with `thiserror`
 
+> ⏱️ Estimated reading time: 10 minutes
+
 ## 1. The Problem
 
 You have a function that can fail in more than one way:

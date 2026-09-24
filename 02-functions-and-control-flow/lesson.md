@@ -1,5 +1,7 @@
 # Lesson 02 — Functions & Control Flow
 
+> ⏱️ Estimated reading time: 8 minutes
+
 ## 1. Functions
 
 Functions are declared with `fn`. Rust uses **snake_case** for function names.

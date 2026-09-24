@@ -1,5 +1,7 @@
 # Lesson 16 — Compile-Time SQL with sqlx
 
+> ⏱️ Estimated reading time: 15 minutes
+
 In TypeScript, you've probably used Prisma, Drizzle, or raw SQL strings to talk to
 databases. The problem with raw SQL is obvious: a typo in a column name blows up at
 runtime. Prisma and Drizzle solve this with code generation. Rust's `sqlx` takes a

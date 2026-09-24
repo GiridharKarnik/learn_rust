@@ -1,5 +1,7 @@
 # Lesson 06 — Option, Result & Error Handling
 
+> ⏱️ Estimated reading time: 30 minutes
+
 In Lesson 05, you learned how enums can carry data and how `match` lets you extract it.
 Now we meet Rust's two most important enums: `Option<T>` and `Result<T, E>`. They handle
 the two most common situations in programming: "maybe there's no value" and "this

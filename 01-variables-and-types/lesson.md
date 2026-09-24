@@ -1,5 +1,7 @@
 # Lesson 01 — Variables & Types
 
+> ⏱️ Estimated reading time: 8 minutes
+
 ## The Basics
 
 Every Rust program starts in `fn main()`. Let's learn how to store and work with data.

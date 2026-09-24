@@ -1,5 +1,7 @@
 # Lesson 11 — Traits & Generics
 
+> ⏱️ Estimated reading time: 15 minutes
+
 Traits are Rust's answer to the question: *"How do I write code that works with multiple
 types?"* If you've used TypeScript interfaces, you already understand the motivation.
 Traits take the idea further — they can carry default implementations, drive compile-time

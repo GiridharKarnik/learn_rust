@@ -1,5 +1,7 @@
 # Lesson 07 — Vec and Slices
 
+> ⏱️ Estimated reading time: 15 minutes
+
 You've already pushed items into a `Vec` and iterated over `&vec`. Now let's go deeper.
 `Vec<T>` is Rust's most-used collection — the growable, heap-allocated array. And *slices*
 (`&[T]`) are how you borrow pieces of one.

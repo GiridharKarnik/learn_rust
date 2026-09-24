@@ -1,5 +1,7 @@
 # Lesson 09 — Iterators
 
+> ⏱️ Estimated reading time: 20 minutes
+
 In Lesson 07 you learned to store data in `Vec`, `HashMap`, and slices. You even used
 a few iterator methods like `.iter().map().collect()`. Now we're going to blow the doors
 off. Iterators are the **core data-processing tool** in Rust — once you're comfortable

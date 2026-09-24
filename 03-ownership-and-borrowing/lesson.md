@@ -1,5 +1,7 @@
 # Lesson 03 — Ownership & Borrowing
 
+> ⏱️ Estimated reading time: 12 minutes
+
 This is **the** concept that makes Rust different from every other language. Once this
 clicks, everything else in Rust makes sense.
 

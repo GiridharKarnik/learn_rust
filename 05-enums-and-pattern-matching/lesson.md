@@ -1,5 +1,7 @@
 # Lesson 05 — Enums & Pattern Matching
 
+> ⏱️ Estimated reading time: 20 minutes
+
 Enums are one of Rust's **most powerful features**. If structs let you say "a Train
 has these fields," enums let you say "a TrainStatus is one of these possibilities."
 Combined with pattern matching, they give you a way to handle every possible state

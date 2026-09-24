@@ -1,5 +1,7 @@
 # Lesson 14: Async Execution with Tokio
 
+> ⏱️ Estimated reading time: 18 minutes
+
 You already know `async`/`await` from TypeScript. Good news — the syntax in Rust
 looks almost identical. The *mental model* underneath, however, is fundamentally
 different. This lesson bridges that gap and gets you productive with **Tokio**,

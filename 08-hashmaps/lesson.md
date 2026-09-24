@@ -1,5 +1,7 @@
 # Lesson 08 — HashMaps
 
+> ⏱️ Estimated reading time: 25 minutes
+
 In Lesson 07, you worked with `Vec`, slices, `HashMap`, and iterators all in one big sweep.
 Now we slow down and give `HashMap` the spotlight it deserves. HashMaps are *everywhere* in
 real programs — configuration tables, caches, counters, indexes — and Rust's Entry API

@@ -1,5 +1,7 @@
 # Lesson 09 — Panics & Defensive Programming
 
+> ⏱️ Estimated reading time: 25 minutes
+
 In Lesson 06 you learned to use `Option` and `Result` to handle errors gracefully. But
 what happens when things go *really* wrong — when your code hits a state so bad that it
 can't continue? That's a **panic**.

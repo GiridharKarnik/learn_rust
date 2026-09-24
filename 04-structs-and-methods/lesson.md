@@ -1,5 +1,7 @@
 # Lesson 04 — Structs & Methods
 
+> ⏱️ Estimated reading time: 15 minutes
+
 Structs are how you create **custom data types** in Rust. If you've used classes in
 TypeScript/Python/Java, structs fill the same role — but without inheritance.
 

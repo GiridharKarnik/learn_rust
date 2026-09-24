@@ -1,3 +1,5 @@
+use serde::Deserialize;
+use thiserror::Error;
 // =============================================================================
 // Exercise: Train Lookup Service
 // =============================================================================
@@ -46,7 +48,21 @@
 //   - Json(serde_json::Error)
 //     Error message: "JSON error: {0}"
 //     Use #[from] so serde_json::Error converts automatically with ?
-//
+#[derive(Debug, Error)]
+enum TrainError {
+    #[error("Train #{0} not found")]
+    NotFound(u32),
+
+    #[error("Train name cannot be empty")]
+    EmptyName,
+
+    #[error("Speed must be positive, got {0}")]
+    InvalidSpeed(i32),
+
+    #[error("JSON error: {0}")]
+    Json(#[from] serde_json::Error),
+}
+
 //
 // STEP 2: Define `Train` struct
 // ------------------------------
@@ -57,8 +73,32 @@
 //   - Train::new(number, name, speed_kmh) -> Train
 //   - Train::display(&self) -> String
 //     Returns: "#{number} {name} ({speed_kmh} km/h)"
-//
-//
+#[derive(Debug, Clone, serde::Deserialize)]
+struct Train {
+    number: u32,
+    name: String,
+    speed_kmh: u32,
+}
+
+impl Train {
+    fn new(number: u32, name: &str, speed_kmh: u32) -> Train {
+        Train {
+            number,
+            name: name.to_string(),
+            speed_kmh,
+        }
+    }
+
+    fn display(&self) -> String {
+        format!(
+            "#{number} {name} ({speed_kmh} km/h)",
+            number = self.number,
+            name = self.name,
+            speed_kmh = self.speed_kmh
+        )
+    }
+}
+
 // STEP 3: Implement `validate_train`
 // -----------------------------------
 // fn validate_train(name: &str, speed: i32) -> Result<(), TrainError>
@@ -66,7 +106,18 @@
 //   - If name (after trimming) is empty → Err(TrainError::EmptyName)
 //   - If speed <= 0 → Err(TrainError::InvalidSpeed(speed))
 //   - Otherwise → Ok(())
-//
+fn validate_train(name: &str, speed: i32) -> Result<(), TrainError> {
+    if name.trim().is_empty() {
+        return Err(TrainError::EmptyName);
+    }
+
+    if speed <= 0 {
+        return Err(TrainError::InvalidSpeed(speed));
+    }
+
+    Ok(())
+}
+
 //
 // STEP 4: Implement `find_train`
 // -------------------------------
@@ -74,7 +125,20 @@
 //
 // Search through the slice for a train with matching number.
 // Return TrainError::NotFound if not found.
-//
+
+fn find_train(trains: &[Train], number: u32) -> Result<&Train, TrainError> {
+    // trains
+    //     .iter()
+    //     .find(|t| t.number == number)
+    //     .ok_or(TrainError::NotFound(number))
+    let train = trains.iter().find(|t| t.number == number);
+
+    if let Some(train) = train {
+        Ok(train)
+    } else {
+        return Err(TrainError::NotFound(number));
+    }
+}
 //
 // STEP 5: Implement `parse_train_json`
 // --------------------------------------
@@ -82,7 +146,16 @@
 //
 // Use serde_json::from_str(json) with the ? operator.
 // The #[from] attribute on the Json variant makes the conversion automatic.
-//
+fn parse_train_json(json: &str) -> Result<Train, TrainError> {
+    match serde_json::from_str(json) {
+        Ok(train) => Ok(train),
+        Err(e) => Err(TrainError::Json(e)),
+    }
+
+    // let train = serde_json::from_str(json)?;
+
+    // Ok(train)
+}
 //
 // STEP 6: Write main()
 // ---------------------
