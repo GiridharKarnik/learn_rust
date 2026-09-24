@@ -1,11 +1,11 @@
-# Lesson 11 — Traits & Generics
+# Lesson 11 — Traits
 
-> ⏱️ Estimated reading time: 15 minutes
+> ⏱️ Estimated reading time: 12 minutes
 
 Traits are Rust's answer to the question: *"How do I write code that works with multiple
 types?"* If you've used TypeScript interfaces, you already understand the motivation.
 Traits take the idea further — they can carry default implementations, drive compile-time
-dispatch, and unlock zero-cost generics.
+dispatch, and define shared contracts across types.
 
 Think of it this way: every train, station, and route on a railway network has a
 *display board entry*. They're completely different types, but they all share the ability
@@ -143,93 +143,83 @@ fn print_summary(item: &impl Summary) {
 
 This accepts a `&Train`, a `&Station`, or *any* type that implements `Summary`.
 
-The `&impl Summary` syntax is shorthand for the full **generic** syntax:
-
-```rust
-fn print_summary<T: Summary>(item: &T) {
-    println!("{}", item.summarize());
-}
-```
-
-Both forms are identical. Use `impl Trait` for simple cases, the generic form when you
-need the type parameter `T` in multiple places.
+The `impl Trait` syntax has a generic equivalent — covered in Lesson 12.
 
 ---
 
-## 5. Trait Bounds
+## 5. Returning Traits (`-> impl Trait`)
 
-What if your function needs a type that implements *multiple* traits? Use `+`:
-
-```rust
-fn compare_entries<T: Summary + PartialEq>(a: &T, b: &T) -> bool {
-    println!("Comparing: {} vs {}", a.summarize(), b.summarize());
-    a == b
-}
-```
-
-When bounds get long, use a **where clause** for readability:
+Just as you can use `impl Trait` in a *parameter* position, you can use it in *return*
+position too. The function returns "some type that implements this trait" — the caller
+gets the trait interface, but the concrete type is hidden.
 
 ```rust
-fn compare_entries<T>(a: &T, b: &T) -> bool
-where
-    T: Summary + PartialEq,
-{
-    println!("Comparing: {} vs {}", a.summarize(), b.summarize());
-    a == b
-}
-```
-
-Both forms are identical — `where` is just easier to read when things get complex.
-
----
-
-## 6. Generics
-
-Generics let you write code that works with *any* type, optionally constrained by traits.
-
-### Generic structs
-
-```rust
-struct Container<T> {
-    value: T,
-}
-
-let int_box = Container { value: 42 };
-let str_box = Container { value: "Rajdhani" };
-```
-
-### Generic functions
-
-```rust
-fn largest<T: PartialOrd>(list: &[T]) -> &T {
-    let mut biggest = &list[0];
-    for item in &list[1..] {
-        if item > biggest {
-            biggest = item;
-        }
+fn make_placeholder_train() -> impl Displayable {
+    Train {
+        number: 99999,
+        name: "Ghost Train".to_string(),
+        speed_kmh: 0,
     }
-    biggest
+}
+
+let entry = make_placeholder_train();
+println!("{}", entry.display_full()); // works — Displayable methods available
+// entry.speed_kmh                    // ❌ compiler error: concrete type is hidden
+```
+
+### The critical rule: one concrete type per function
+
+`impl Trait` in return position is resolved **at compile time**. Every `return` path must
+produce the **same** concrete type:
+
+```rust
+// DOES NOT COMPILE — two different concrete types
+fn make_entry(flag: bool) -> impl Displayable {
+    if flag {
+        Train { ... }    // Train
+    } else {
+        Station { ... }  // Station — compiler error!
+    }
 }
 ```
 
-The `<T>` is a placeholder — Rust fills it in at compile time for each concrete type you
-use. This is called **monomorphization**: the compiler generates specialized code for
-`largest::<i32>`, `largest::<f64>`, etc. The result is exactly as fast as hand-written
-code for each type — **zero-cost abstraction**.
+If you need to return different concrete types at runtime, use `Box<dyn Trait>` (dynamic
+dispatch) — that's a later topic.
+
+### `-> impl Trait` vs `-> Box<dyn Trait>`
+
+| | `-> impl Trait` | `-> Box<dyn Trait>` |
+|---|---|---|
+| Dispatch | Compile-time (zero-cost) | Runtime (small heap allocation) |
+| Multiple concrete types | No — all paths same type | Yes |
+| Common use | iterators, futures | mixed collections, plugins |
+
+### Connection to async
+
+This is exactly how `async fn` works under the hood:
+
+```rust
+async fn fetch_status() -> String { ... }
+// desugars to:
+fn fetch_status() -> impl Future<Output = String> { ... }
+```
+
+`impl Future<Output = T>` is `-> impl Trait` in return position. The compiler generates
+the concrete future type — you never need to name it.
 
 ### TypeScript comparison
 
 ```typescript
-// TypeScript generics — same <T> syntax!
-function largest<T>(list: T[]): T { ... }
+// TypeScript — return types are structural, erased at runtime
+function makeEntry(): Displayable { return new Train(...); }
 ```
 
-The syntax is almost identical. The difference: TypeScript generics are erased at
-runtime. Rust generics are resolved at compile time into specialized machine code.
+Rust's `-> impl Trait` is zero-cost: the concrete type is baked in at compile time with
+no vtable lookup. The caller sees only the trait, but there is no runtime overhead.
 
 ---
 
-## 7. Common Standard Library Traits
+## 6. Common Standard Library Traits
 
 You'll use these constantly. Some you derive, some you implement manually.
 
@@ -259,7 +249,7 @@ struct Train {
 
 ---
 
-## 8. The `Display` Trait — Custom Formatting
+## 7. The `Display` Trait — Custom Formatting
 
 `Display` controls what happens when you use `{}` in `println!`. Unlike `Debug`, you
 must implement it by hand — the compiler can't guess your preferred human-readable format.
@@ -289,7 +279,7 @@ gets `.to_string()` for free.
 
 ---
 
-## 9. The `From` / `Into` Traits — Type Conversion
+## 8. The `From` / `Into` Traits — Type Conversion
 
 `From` defines how to create a type from another type. Implement `From`, and you get
 `Into` for free (Rust provides a blanket implementation).
@@ -321,42 +311,38 @@ let class2: TicketClass = "SL".into();    // Into (free from implementing From)
 
 ---
 
-## 10. Comparison with TypeScript
+## 9. Comparison with TypeScript
 
 | TypeScript | Rust | Notes |
 |-----------|------|-------|
 | `interface` | `trait` | Same concept: define shared behavior |
 | `implements` | `impl Trait for Type` | Types opt-in to the contract |
-| `<T>` generics | `<T>` generics | Same syntax! |
-| `extends` (interface) | `T: TraitA + TraitB` | Combine multiple constraints |
 | No default method bodies | Default implementations | Traits are more powerful |
-| Runtime dispatch (vtable) | Compile-time dispatch (monomorphization) | Rust is zero-cost |
-| Type erasure at JS emission | Specialized machine code per type | Rust generics are real |
+| `: Interface` return type | `-> impl Trait` | Hide concrete return type |
 | `toString()` override | `impl Display` | Same idea, different mechanism |
 
-The mental model transfers well. The biggest adjustment: Rust resolves everything at
-compile time. There is no `any` type, no runtime reflection, and no type erasure. If
-a generic function compiles, every concrete usage is guaranteed to be type-safe.
+The mental model transfers well. Traits are Rust's primary tool for shared behavior.
+Generics (covered in Lesson 12) build on this foundation.
 
 ---
 
-## 11. Mental Model Summary
+## 10. Mental Model Summary
 
 ```
 ┌─────────────────────────────────────────────┐
 │  trait = "any type that can do X"           │
 │  impl Trait for Type = "this type can do X" │
-│  <T: Trait> = "give me any T that can do X" │
+│  impl Trait (param) = "accepts any type X"  │
 └─────────────────────────────────────────────┘
 ```
 
 - **Traits** define *shared behavior* (what methods must exist).
 - **impl blocks** connect traits to concrete types.
-- **Generics** let you write one function/struct that works with many types.
-- **Trait bounds** constrain generics to types that have the behavior you need.
+- **Default implementations** let traits provide free method bodies.
+- **`impl Trait` parameters** accept any type that satisfies the trait.
+- **`-> impl Trait` returns** hide the concrete type behind a trait interface.
 - **Derive macros** auto-implement common traits like `Debug`, `Clone`, `PartialEq`.
 - **`Display`** — implement it so your types work with `println!("{}", x)`.
 - **`From`/`Into`** — implement `From` for ergonomic type conversions.
 
-When you see `<T: SomeTrait>`, read it as: *"for any type T, as long as T implements
-SomeTrait."* That's the whole idea.
+Lesson 12 builds on this foundation with generics and trait bounds.

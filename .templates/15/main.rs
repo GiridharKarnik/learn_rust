@@ -1,149 +1,96 @@
-// =============================================
-// EXERCISE 15: Railway Ticket Counter
-// =============================================
+// =============================================================================
+// Exercise: Train Lookup Service
+// =============================================================================
 //
-// Simulate multiple ticket counters (async tasks) selling from a shared pool.
-// There is NO code provided — you write everything, including main().
+// Build a train lookup service with typed error handling using thiserror.
+// Each step builds on the previous one.
 //
-// This exercises: Arc, Mutex, tokio::spawn, shared mutable state,
-// async/await, lock patterns.
+// Expected output:
 //
-// Run with: cargo run
+//   === TRAIN LOOKUP SERVICE ===
 //
-// Expected output (order of counter messages may vary):
+//   --- Successful Lookups ---
+//   Found: #12001 Rajdhani Express (130 km/h)
+//   Found: #12007 Shatabdi Express (150 km/h)
 //
-//   === RAILWAY TICKET COUNTER ===
+//   --- Error Cases ---
+//   Error: Train #99999 not found
+//   Error: Train name cannot be empty
+//   Error: Speed must be positive, got -50
 //
-//   Starting simulation with 50 tickets available...
+//   --- Parse from JSON ---
+//   Parsed: #12001 Rajdhani Express
+//   Parse error: JSON error: missing field `name`
 //
-//   [Counter 1] Sold ticket to Amit for train 12001 (49 remaining)
-//   [Counter 1] Sold ticket to Priya for train 12007 (48 remaining)
-//   [Counter 2] Sold ticket to Raj for train 12001 (47 remaining)
-//   [Counter 2] Sold ticket to Sita for train 12245 (46 remaining)
-//   [Counter 2] Sold ticket to Vikram for train 12001 (45 remaining)
-//   [Counter 3] Sold ticket to Anita for train 12007 (44 remaining)
-//   [Counter 3] Sold ticket to Deepak for train 12245 (43 remaining)
-//   [Counter 1] Sold ticket to Meera for train 12245 (42 remaining)
+//   --- Batch Lookup ---
+//     ✅ #12001 Rajdhani Express
+//     ❌ Train #99999 not found
+//     ✅ #12007 Shatabdi Express
+//     ❌ Train #55555 not found
+//   Results: 2 found, 2 errors
 //
-//   === SIMULATION COMPLETE ===
-//   Tickets remaining: 42
-//   Tickets sold: 8
-//   Sales log:
-//     Amit → Train 12001
-//     Priya → Train 12007
-//     Raj → Train 12001
-//     Sita → Train 12245
-//     Vikram → Train 12001
-//     Anita → Train 12007
-//     Deepak → Train 12245
-//     Meera → Train 12245
-
-// =============================================
-// STEP 1: Define the `TicketPool` struct
-// =============================================
-// Fields:
-//   available: u32            — number of tickets remaining
-//   sold: Vec<(String, u32)>  — list of (passenger_name, train_number)
 //
-// Derive Debug.
-
-// =============================================
-// STEP 2: Implement `TicketPool` methods
-// =============================================
+// STEP 1: Define `TrainError` enum using thiserror
+// -------------------------------------------------
+// Use #[derive(Debug, thiserror::Error)] and add these variants:
 //
-// impl TicketPool {
+//   - NotFound(u32)
+//     Error message: "Train #{0} not found"
 //
-//   fn new(available: u32) -> Self
-//     Create a new pool with the given number of tickets and an empty sold vec.
+//   - EmptyName
+//     Error message: "Train name cannot be empty"
 //
-//   fn sell(&mut self, passenger: &str, train_number: u32) -> Result<u32, String>
-//     If available > 0:
-//       - Decrement available
-//       - Push (passenger.to_string(), train_number) to sold
-//       - Return Ok(self.available)  (remaining count)
-//     Else:
-//       - Return Err("No tickets available".to_string())
+//   - InvalidSpeed(i32)
+//     Error message: "Speed must be positive, got {0}"
 //
-//   fn available_count(&self) -> u32
-//     Return self.available
+//   - Json(serde_json::Error)
+//     Error message: "JSON error: {0}"
+//     Use #[from] so serde_json::Error converts automatically with ?
 //
-//   fn sold_count(&self) -> usize
-//     Return self.sold.len()
 //
-//   fn sold_log(&self) -> &[(String, u32)]
-//     Return a slice of the sold vec.
-// }
-
-// =============================================
-// STEP 3: Wrap in Arc<Mutex<TicketPool>>
-// =============================================
+// STEP 2: Define `Train` struct
+// ------------------------------
+// Fields: number (u32), name (String), speed_kmh (u32)
+// Derive: Debug, Clone, serde::Deserialize
 //
-// This step happens inside run_simulation (Step 5).
-// You'll create: Arc::new(Mutex::new(TicketPool::new(50)))
+// Implement:
+//   - Train::new(number, name, speed_kmh) -> Train
+//   - Train::display(&self) -> String
+//     Returns: "#{number} {name} ({speed_kmh} km/h)"
 //
-// Use std::sync::{Arc, Mutex} — we hold the lock briefly
-// (no .await while locked), so std::sync::Mutex is fine with Tokio.
-
-// =============================================
-// STEP 4: Implement the counter task
-// =============================================
 //
-// async fn ticket_counter(
-//     id: u32,
-//     pool: Arc<Mutex<TicketPool>>,
-//     passengers: Vec<(&str, u32)>,
-// )
+// STEP 3: Implement `validate_train`
+// -----------------------------------
+// fn validate_train(name: &str, speed: i32) -> Result<(), TrainError>
 //
-// For each (passenger, train_number) in passengers:
-//   1. Lock the pool
-//   2. Call pool.sell(passenger, train_number)
-//   3. Match the result:
-//      Ok(remaining)  → println!("[Counter {}] Sold ticket to {} for train {} ({} remaining)", ...)
-//      Err(e)         → println!("[Counter {}] Failed for {}: {}", id, passenger, e)
-//   4. The lock is released when the guard goes out of scope
-//   5. Add a small delay: tokio::time::sleep(Duration::from_millis(10)).await
-//      (This simulates real work and lets other tasks interleave)
-
-// =============================================
-// STEP 5: Implement run_simulation
-// =============================================
+//   - If name (after trimming) is empty → Err(TrainError::EmptyName)
+//   - If speed <= 0 → Err(TrainError::InvalidSpeed(speed))
+//   - Otherwise → Ok(())
 //
-// async fn run_simulation()
 //
-// 1. Create the shared pool: Arc::new(Mutex::new(TicketPool::new(50)))
+// STEP 4: Implement `find_train`
+// -------------------------------
+// fn find_train(trains: &[Train], number: u32) -> Result<&Train, TrainError>
 //
-// 2. Print "Starting simulation with 50 tickets available..."
+// Search through the slice for a train with matching number.
+// Return TrainError::NotFound if not found.
 //
-// 3. Define 3 sets of passengers:
-//    Counter 1: vec![("Amit", 12001), ("Priya", 12007), ("Meera", 12245)]
-//    Counter 2: vec![("Raj", 12001), ("Sita", 12245), ("Vikram", 12001)]
-//    Counter 3: vec![("Anita", 12007), ("Deepak", 12245)]
 //
-// 4. Spawn 3 tokio tasks, one per counter:
-//      let pool_clone = Arc::clone(&pool);
-//      tokio::spawn(async move { ticket_counter(id, pool_clone, passengers).await })
+// STEP 5: Implement `parse_train_json`
+// --------------------------------------
+// fn parse_train_json(json: &str) -> Result<Train, TrainError>
 //
-// 5. Await all 3 task handles (join them).
+// Use serde_json::from_str(json) with the ? operator.
+// The #[from] attribute on the Json variant makes the conversion automatic.
 //
-// 6. Print final stats:
-//    "\n=== SIMULATION COMPLETE ==="
-//    "Tickets remaining: {}"
-//    "Tickets sold: {}"
-//    "Sales log:"
-//    For each (name, train) in sold_log:
-//      "  {} → Train {}"
-
-// =============================================
+//
 // STEP 6: Write main()
-// =============================================
-//
-// #[tokio::main]
-// async fn main() {
-//     println!("=== RAILWAY TICKET COUNTER ===\n");
-//     run_simulation().await;
-// }
+// ---------------------
+// - Create a vec of 3 trains: Rajdhani Express (#12001, 130 km/h),
+//   Duronto Express (#12004, 120 km/h), Shatabdi Express (#12007, 150 km/h)
+// - Do successful lookups for #12001 and #12007
+// - Test each error case: not found (#99999), empty name, invalid speed (-50)
+// - Parse valid JSON and invalid JSON (missing "name" field)
+// - Batch lookup: try [12001, 99999, 12007, 55555], count successes and errors
 
-#[tokio::main]
-async fn main() {
-    // Your code here
-}
+fn main() {}

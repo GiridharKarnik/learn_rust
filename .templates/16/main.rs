@@ -1,237 +1,91 @@
-// =============================================
-// EXERCISE 16: Railway Reservation Database
-// =============================================
+// =============================================================================
+// 🚂 EXERCISE: Railway Dispatch Simulator
+// =============================================================================
 //
-// Build a reservation system backed by SQLite (in-memory).
-// There is NO code provided — you write everything, including main().
-//
-// This exercises: sqlx, SqlitePool, FromRow, query, query_as, execute,
-// bind, fetch_all, fetch_optional, transactions, async/await.
+// Build an async railway dispatch system using Tokio. No real network calls —
+// use tokio::time::sleep to simulate delays.
 //
 // Run with: cargo run
+// You'll see timing differences between sequential and concurrent execution.
 //
-// Expected output:
+// STEP 1: Define a `TrainUpdate` struct
+// ---------------------------------------------------------------------
+// Fields:
+//   - number: u32          (train number, e.g. 101)
+//   - name: String          (train name, e.g. "Eurostar")
+//   - status: String        (e.g. "On Time", "Delayed 5min")
+//   - timestamp: String     (when the update was fetched — use a simple
+//                            counter or "now" placeholder; no need for
+//                            real chrono timestamps)
 //
-//   === RAILWAY RESERVATION DATABASE ===
+// Derive Debug and Clone.
 //
-//   --- Tables created ---
 //
-//   --- Trains seeded ---
-//     #1: Rajdhani Express (Chennai → New Delhi) — 500 seats
-//     #2: Shatabdi Express (Chennai → Bangalore) — 300 seats
-//     #3: Duronto Express (Chennai → Mumbai) — 400 seats
+// STEP 2: Implement `async fn fetch_train_status(number: u32, name: &str) -> TrainUpdate`
+// ---------------------------------------------------------------------
+// - Simulate an API delay with: tokio::time::sleep(Duration::from_millis(500)).await
+// - Return a TrainUpdate with:
+//     number: the input number
+//     name:   the input name (owned String)
+//     status: pick any status string (e.g. "On Time")
+//     timestamp: format!("t={number}") or any placeholder
+// - Print a message like: "📡 Fetched status for Train {number} ({name})"
 //
-//   --- Available trains ---
-//     #1: Rajdhani Express | Chennai → New Delhi | 500/500 seats
-//     #2: Shatabdi Express | Chennai → Bangalore | 300/300 seats
-//     #3: Duronto Express | Chennai → Mumbai | 400/400 seats
 //
-//   --- Making reservations ---
-//     ✅ Reservation #1: Amit on train #1
-//     ✅ Reservation #2: Priya on train #1
-//     ✅ Reservation #3: Raj on train #2
-//     ✅ Reservation #4: Sita on train #3
+// STEP 3: Implement `async fn fetch_all_sequential(trains: &[(u32, &str)]) -> Vec<TrainUpdate>`
+// ---------------------------------------------------------------------
+// - Loop through `trains` and call fetch_train_status for each, awaiting
+//   one at a time.
+// - Measure the total time with std::time::Instant::now() / .elapsed()
+// - Print the elapsed time at the end.
+// - Return the collected results.
 //
-//   --- All reservations ---
-//     [#1] Amit on Rajdhani Express — confirmed
-//     [#2] Priya on Rajdhani Express — confirmed
-//     [#3] Raj on Shatabdi Express — confirmed
-//     [#4] Sita on Duronto Express — confirmed
 //
-//   --- Cancelling reservation #2 ---
-//     ✅ Reservation #2 cancelled
+// STEP 4: Implement `async fn fetch_all_concurrent(trains: &[(u32, &str)]) -> Vec<TrainUpdate>`
+// ---------------------------------------------------------------------
+// - Fetch all trains concurrently. You can use:
+//     Option A: tokio::task::JoinSet — spawn each fetch, collect results
+//     Option B: tokio::join! — if you know the count at compile time
+//   JoinSet is recommended since the number of trains is dynamic.
+// - Measure and print elapsed time.
+// - Return the results.
+// - This should be significantly faster than sequential!
 //
-//   --- Reservations after cancellation ---
-//     [#1] Amit on Rajdhani Express — confirmed
-//     [#2] Priya on Rajdhani Express — cancelled
-//     [#3] Raj on Shatabdi Express — confirmed
-//     [#4] Sita on Duronto Express — confirmed
 //
-//   --- Seat availability after operations ---
-//     Rajdhani Express: 499/500 seats (1 active reservation)
-//     Shatabdi Express: 299/300 seats (1 active reservation)
-//     Duronto Express: 399/400 seats (1 active reservation)
+// STEP 5: Implement `async fn monitor_with_timeout(number: u32, name: &str, timeout_ms: u64) -> Result<TrainUpdate, String>`
+// ---------------------------------------------------------------------
+// - Use tokio::time::timeout to wrap fetch_train_status with a deadline.
+// - If the fetch completes in time, return Ok(update).
+// - If it times out, return Err("⏰ Timeout fetching Train {number} ({name})".into())
+// - Hint: timeout returns Result<T, Elapsed>. Map the Err.
+//
+//
+// STEP 6: Implement `async fn dispatch_updates(count: u32)`
+// ---------------------------------------------------------------------
+// - Create an mpsc channel: let (tx, mut rx) = tokio::sync::mpsc::channel(32);
+// - Spawn a producer task that:
+//     - Sends `count` TrainUpdate messages through the channel
+//     - Use train numbers 1..=count and made-up names
+//     - Sleep 200ms between each send to simulate staggered arrivals
+// - In the main flow (not spawned), receive messages from rx and print them.
+// - The loop ends when the sender is dropped and the channel closes.
+//
+//
+// STEP 7: Write the async main function
+// ---------------------------------------------------------------------
+// - Use #[tokio::main] on main.
+// - Define a list of trains: [(u32, &str)] — at least 4 trains with numbers and names.
+// - Call fetch_all_sequential and print results.
+// - Call fetch_all_concurrent and print results.
+// - Call monitor_with_timeout with a generous timeout (should succeed).
+// - Call monitor_with_timeout with a tiny timeout like 100ms (should fail since
+//   fetch takes 500ms).
+// - Call dispatch_updates(5).
+// - Print a summary at the end.
+//
+// =============================================================================
 
-// =============================================
-// STEP 1: Define `Train` and `Reservation` structs
-// =============================================
-//
-// #[derive(Debug, FromRow)]
-// struct Train {
-//     id: i64,
-//     name: String,
-//     from_station: String,
-//     to_station: String,
-//     total_seats: i64,
-//     available_seats: i64,
-// }
-//
-// #[derive(Debug, FromRow)]
-// struct Reservation {
-//     id: i64,
-//     passenger_name: String,
-//     train_id: i64,
-//     status: String,
-// }
-//
-// You'll also need a struct for the joined reservation data:
-//
-// #[derive(Debug, FromRow)]
-// struct ReservationDetail {
-//     id: i64,
-//     passenger_name: String,
-//     train_name: String,
-//     status: String,
-// }
-//
-// Don't forget: use sqlx::FromRow;
-
-// =============================================
-// STEP 2: Implement `create_tables`
-// =============================================
-//
-// async fn create_tables(pool: &SqlitePool) -> Result<(), sqlx::Error>
-//
-// Create two tables:
-//
-// trains:
-//   id INTEGER PRIMARY KEY AUTOINCREMENT
-//   name TEXT NOT NULL
-//   from_station TEXT NOT NULL
-//   to_station TEXT NOT NULL
-//   total_seats INTEGER NOT NULL
-//   available_seats INTEGER NOT NULL
-//
-// reservations:
-//   id INTEGER PRIMARY KEY AUTOINCREMENT
-//   passenger_name TEXT NOT NULL
-//   train_id INTEGER NOT NULL
-//   status TEXT NOT NULL DEFAULT 'confirmed'
-//   FOREIGN KEY (train_id) REFERENCES trains(id)
-//
-// Use sqlx::query("CREATE TABLE IF NOT EXISTS ...").execute(pool).await?;
-
-// =============================================
-// STEP 3: Implement `seed_trains`
-// =============================================
-//
-// async fn seed_trains(pool: &SqlitePool) -> Result<(), sqlx::Error>
-//
-// Insert 3 trains:
-//   ("Rajdhani Express", "Chennai", "New Delhi", 500)
-//   ("Shatabdi Express", "Chennai", "Bangalore", 300)
-//   ("Duronto Express",  "Chennai", "Mumbai",    400)
-//
-// For each, INSERT INTO trains (name, from_station, to_station, total_seats, available_seats)
-// Set available_seats = total_seats initially.
-//
-// After inserting, print each train:
-//   "  #{id}: {name} ({from} → {to}) — {seats} seats"
-
-// =============================================
-// STEP 4: Implement `list_trains`
-// =============================================
-//
-// async fn list_trains(pool: &SqlitePool) -> Result<Vec<Train>, sqlx::Error>
-//
-// SELECT all columns FROM trains ORDER BY id.
-// Use sqlx::query_as::<_, Train>(...).fetch_all(pool).await
-
-// =============================================
-// STEP 5: Implement `make_reservation`
-// =============================================
-//
-// async fn make_reservation(
-//     pool: &SqlitePool,
-//     passenger: &str,
-//     train_id: i64,
-// ) -> Result<i64, String>
-//
-// Use a TRANSACTION:
-// 1. pool.begin().await
-// 2. Check if the train exists and has available seats:
-//    SELECT available_seats FROM trains WHERE id = ?
-//    Use fetch_optional. If None → return Err("Train not found")
-//    If available_seats <= 0 → return Err("No seats available")
-// 3. INSERT INTO reservations (passenger_name, train_id, status) VALUES (?, ?, 'confirmed')
-// 4. UPDATE trains SET available_seats = available_seats - 1 WHERE id = ?
-// 5. tx.commit().await
-// 6. Return Ok(reservation_id)
-//
-// Map sqlx errors to String with .map_err(|e| e.to_string())
-
-// =============================================
-// STEP 6: Implement `cancel_reservation`
-// =============================================
-//
-// async fn cancel_reservation(pool: &SqlitePool, id: i64) -> Result<(), String>
-//
-// Use a TRANSACTION:
-// 1. Find the reservation: SELECT id, train_id, status FROM reservations WHERE id = ?
-//    If not found → return Err("Reservation not found")
-//    If status is already "cancelled" → return Err("Already cancelled")
-// 2. UPDATE reservations SET status = 'cancelled' WHERE id = ?
-// 3. UPDATE trains SET available_seats = available_seats + 1 WHERE id = ?
-// 4. tx.commit().await
-// 5. Return Ok(())
-//
-// Note: when fetching the reservation in the transaction, you'll need to use
-// sqlx::query("SELECT ...").bind(id).fetch_optional(&mut *tx) and row.get()
-// to extract train_id and status, since we're inside a transaction.
-
-// =============================================
-// STEP 7: Implement `list_reservations`
-// =============================================
-//
-// async fn list_reservations(pool: &SqlitePool) -> Result<Vec<ReservationDetail>, sqlx::Error>
-//
-// Use a JOIN to get the train name:
-//   SELECT r.id, r.passenger_name, t.name as train_name, r.status
-//   FROM reservations r
-//   JOIN trains t ON r.train_id = t.id
-//   ORDER BY r.id
-//
-// Use sqlx::query_as::<_, ReservationDetail>(...).fetch_all(pool).await
-
-// =============================================
-// STEP 8: Write main()
-// =============================================
-//
-// #[tokio::main]
-// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//
-// 1. Print "=== RAILWAY RESERVATION DATABASE ==="
-//
-// 2. Connect: SqlitePool::connect(":memory:").await?
-//
-// 3. Create tables, print "\n--- Tables created ---"
-//
-// 4. Seed trains, print "\n--- Trains seeded ---"
-//
-// 5. List trains, print "\n--- Available trains ---"
-//    For each: "  #{id}: {name} | {from} → {to} | {available}/{total} seats"
-//
-// 6. Make reservations, print "\n--- Making reservations ---"
-//    Book: ("Amit", 1), ("Priya", 1), ("Raj", 2), ("Sita", 3)
-//    For each success: "  ✅ Reservation #{id}: {passenger} on train #{train_id}"
-//
-// 7. List reservations, print "\n--- All reservations ---"
-//    For each: "  [#{id}] {passenger} on {train_name} — {status}"
-//
-// 8. Cancel reservation #2, print "\n--- Cancelling reservation #2 ---"
-//    On success: "  ✅ Reservation #2 cancelled"
-//
-// 9. List reservations again, print "\n--- Reservations after cancellation ---"
-//
-// 10. Show final seat availability, print "\n--- Seat availability after operations ---"
-//     List trains and for each:
-//     "  {name}: {available}/{total} seats ({active} active reservation(s))"
-//     Count active reservations with a query:
-//       SELECT COUNT(*) as count FROM reservations WHERE train_id = ? AND status = 'confirmed'
-//
-// }
-
-#[tokio::main]
-async fn main() {
-    // Your code here
+fn main() {
+    // TODO: Replace with #[tokio::main] async fn main() and implement the steps above.
+    println!("Replace me with your async implementation!");
 }

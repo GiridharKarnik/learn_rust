@@ -3,10 +3,10 @@
 // =============================================
 //
 // Build a system where multiple types (Train, Station, Route) share common
-// behavior through traits and generics.
+// behavior through traits.
 //
 // You know: variables, functions, ownership, structs, enums, Option, Result,
-// Vec, HashMap, iterators, panics. Now add traits & generics to your toolkit.
+// Vec, HashMap, iterators, panics. Now add traits to your toolkit.
 //
 // Run with: cargo run
 //
@@ -34,14 +34,8 @@
 //   Chennai Central [MAS]
 //   Chennai → New Delhi (2180km)
 //
-//   --- Search: find_by_name ---
-//   Found train: [TRAIN] #20601 Vande Bharat Express (160km/h)
-//   Found station: [STATION] Mumbai CST [CSMT] — 18 platforms
-//   No route containing 'Kolkata'
-//
-//   --- From/Into Conversion ---
-//   Route from tuple: Delhi → Agra (200km)
-//   Route via .into(): Mumbai → Pune (150km)
+//   --- impl Trait Return ---
+//   [ROUTE] Kolkata → Darjeeling (600km)
 //
 //   === DONE ===
 
@@ -97,28 +91,34 @@ use std::fmt;
 // This lets you write: println!("{}", train);
 
 // =============================================
-// STEP 6: Write a generic function `print_all`
+// STEP 6: Add a constructor to Route
 // =============================================
-// fn print_all<T: Displayable>(items: &[T])
+// Add a `new` associated function inside an `impl Route` block:
+//   fn new(from: &str, to: &str, distance_km: u32) -> Self
 //
-// For each item, print: "  {display_full}"   (two spaces indent)
-
-// =============================================
-// STEP 7: Write a generic function `find_by_name`
-// =============================================
-// fn find_by_name<'a, T: Displayable>(items: &'a [T], name: &str) -> Option<&'a T>
+// Callers pass &str — the constructor handles .to_string() internally.
+// Set trains to vec![].
 //
-// Return the first item whose display_line() contains `name`.
-// Hint: items.iter().find(|item| item.display_line().contains(name))
+// impl Route {
+//     fn new(from: &str, to: &str, distance_km: u32) -> Self {
+//         Route { from: from.to_string(), ... }
+//     }
+// }
 
 // =============================================
-// STEP 8: Implement From<(&str, &str, u32)> for Route
+// STEP 7: Write `make_summary_route`
 // =============================================
-// Convert a tuple (from, to, distance_km) into a Route.
-// The trains vec should be empty.
+// fn make_summary_route(from: &str, to: &str, distance_km: u32) -> impl Displayable
+//
+// Return a Route { from, to, distance_km, trains: vec![] }.
+// The caller only sees `impl Displayable` — not that it's a Route.
+//
+// Key rule: every return path must produce the same concrete type.
+// (To return Train OR Route depending on a condition, you'd need
+// Box<dyn Displayable> instead — a later topic.)
 
 // =============================================
-// STEP 9: Write main()
+// STEP 8: Write main()
 // =============================================
 //
 // 1. Print "=== RAILWAY DISPLAY SYSTEM ==="
@@ -133,31 +133,29 @@ use std::fmt;
 //    Station { name: "New Delhi",       code: "NDLS", platforms: 16 }
 //    Station { name: "Mumbai CST",      code: "CSMT", platforms: 18 }
 //
-// 4. Create a Vec of routes:
-//    Route { from: "Chennai", to: "New Delhi",   distance_km: 2180, trains: vec![] }
-//    Route { from: "Chennai", to: "Mumbai",      distance_km: 1280, trains: vec![] }
-//    Route { from: "Chennai", to: "Bangalore",   distance_km: 350,  trains: vec![] }
+// 4. Create a Vec of routes using Route::new():
+//    Route::new("Chennai", "New Delhi",  2180)
+//    Route::new("Chennai", "Mumbai",     1280)
+//    Route::new("Chennai", "Bangalore",   350)
 //
-// 5. Print "--- All Trains ---" then call print_all(&trains)
-// 6. Print "--- All Stations ---" then call print_all(&stations)
-// 7. Print "--- All Routes ---" then call print_all(&routes)
+// 5. Print "--- All Trains ---"
+//    For each train, print: "  {display_full}"   (two spaces indent)
+//
+// 6. Print "--- All Stations ---"
+//    For each station, print: "  {display_full}"   (two spaces indent)
+//
+// 7. Print "--- All Routes ---"
+//    For each route, print: "  {display_full}"   (two spaces indent)
 //
 // 8. Print "--- Display with println! (Display trait) ---"
 //    println!("  {}", trains[0]);
 //    println!("  {}", stations[0]);
 //    println!("  {}", routes[0]);
 //
-// 9. Print "--- Search: find_by_name ---"
-//    Search trains for "Vande" — print "Found train: {display_full}"
-//    Search stations for "Mumbai" — print "Found station: {display_full}"
-//    Search routes for "Kolkata" — print "No route containing 'Kolkata'"
+// 9. Print "--- impl Trait Return ---"
+//     let summary = make_summary_route("Kolkata", "Darjeeling", 600);
+//     println!("  {}", summary.display_full());
 //
-// 10. Print "--- From/Into Conversion ---"
-//     let r1 = Route::from(("Delhi", "Agra", 200));
-//     let r2: Route = ("Mumbai", "Pune", 150).into();
-//     println!("  Route from tuple: {}", r1);
-//     println!("  Route via .into(): {}", r2);
-//
-// 11. Print "=== DONE ==="
+// 10. Print "=== DONE ==="
 
 fn main() {}

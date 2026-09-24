@@ -37,21 +37,11 @@
 //     150% refund: Error — Invalid refund percentage: 150
 //     Refund on ₹-500.00: Error — Invalid price: -500
 
-use core::panic::PanicMessage;
-use std::intrinsics::simd::simd_with_exposed_provenance;
-
 // =============================================
 // STEP 1: Define `TicketClass` enum
 // =============================================
 // Variants: FirstAC, SecondAC, Sleeper, General
 // Derive: Debug, Clone
-#[derive(Debug, Clone)]
-enum TicketClass {
-    FirstAC,
-    SecondAC,
-    Sleeper,
-    General,
-}
 
 // =============================================
 // STEP 2: Implement `parse_ticket_class`
@@ -67,38 +57,13 @@ enum TicketClass {
 //   anything else        → Err("Unknown ticket class: {input}")
 //
 // WHY: Return Result instead of panicking on bad input.
-fn parse_ticket_class(input: &str) -> Result<TicketClass, String> {
-    let trimmed = input.trim();
 
-    if trimmed.is_empty() {
-        return Err("Ticket class cannot be empty".to_string());
-    }
-
-    let lowered = trimmed.to_lowercase();
-
-    return match lowered.as_str() {
-        "1a" | "first" => Ok(TicketClass::FirstAC),
-        "2a" | "second" => Ok(TicketClass::SecondAC),
-        "sl" | "sleeper" => Ok(TicketClass::Sleeper),
-        "gn" | "general" => Ok(TicketClass::General),
-        "" => Err("Ticket class cannot be empty".to_string()),
-        _ => Err(format!("Unknown ticket class: {}", input)),
-    };
-}
 // =============================================
 // STEP 3: Define `Ticket` struct
 // =============================================
 // Fields: id (u32), passenger (String), from (String), to (String),
 //         class (TicketClass), price (f64)
 // Derive: Debug, Clone
-struct Ticket {
-    id: u32,
-    passenger: String,
-    from: String,
-    to: String,
-    class: TicketClass,
-    price: f64,
-}
 
 // =============================================
 // STEP 4: Implement `Ticket` methods
@@ -106,31 +71,6 @@ struct Ticket {
 // - fn new(id, passenger: &str, from: &str, to: &str, class: TicketClass, price: f64) -> Self
 // - fn display(&self) -> String
 //     Returns: "Ticket #{id}: {passenger} | {from} → {to} | {class:?} | ₹{price:.2}"
-
-impl Ticket {
-    fn new(id: u32, passenger: &str, from: &str, to: &str, class: TicketClass, price: f64) -> Self {
-        return Ticket {
-            id,
-            passenger: passenger.to_string(),
-            from: from.to_string(),
-            to: to.to_string(),
-            class,
-            price,
-        };
-    }
-
-    fn display(&self) -> String {
-        format!(
-            "Ticket #{id}: {passenger} | {from} → {to} | {class:?} | ₹{price:.2}",
-            id = self.id,
-            passenger = self.passenger,
-            from = self.from,
-            to = self.to,
-            class = self.class,
-            price = self.price
-        )
-    }
-}
 
 // =============================================
 // STEP 5: Implement `validate_ticket`
@@ -146,51 +86,12 @@ impl Ticket {
 //
 // WHY: Validation returns Result, not panic. Caller decides what to do.
 
-fn validate_ticket(ticket: &Ticket) -> Result<(), String> {
-    if ticket.passenger.is_empty() {
-        return Err(format!(
-            "Ticket #{id}: passenger name is empty",
-            id = ticket.id
-        ));
-    }
-
-    if ticket.from == ticket.to {
-        return Err(format!(
-            "Ticket #{id}: origin and destination are the same",
-            id = ticket.id
-        ));
-    }
-    if ticket.price <= 0.0 {
-        return Err(format!(
-            "Ticket #{id}: invalid price ₹{price:.2}",
-            id = ticket.id,
-            price = ticket.price
-        ));
-    }
-    if ticket.price > 10000.0 {
-        return Err(format!(
-            "Ticket #{id}: price ₹{price:.2} exceeds maximum",
-            id = ticket.id,
-            price = ticket.price
-        ));
-    }
-
-    return Ok(());
-}
-
 // =============================================
 // STEP 6: Implement `find_ticket`
 // =============================================
 // fn find_ticket(tickets: &[Ticket], id: u32) -> Option<&Ticket>
 //
 // Search by id. Return Some or None. Never panic.
-fn find_ticket(tickets: &[Ticket], id: u32) -> Option<&Ticket> {
-    if tickets.is_empty() {
-        return None;
-    }
-
-    tickets.iter().find(|ticket| ticket.id == id)
-}
 
 // =============================================
 // STEP 7: Implement `get_ticket_at`
@@ -201,9 +102,6 @@ fn find_ticket(tickets: &[Ticket], id: u32) -> Option<&Ticket> {
 // .get() returns Option, [] panics on out of bounds.
 //
 // WHY: This is the #1 defensive pattern — safe indexing.
-fn get_ticket_at(tickets: &[Ticket], index: usize) -> Option<&Ticket> {
-    tickets.get(index)
-}
 
 // =============================================
 // STEP 8: Implement `calculate_refund`
@@ -216,20 +114,6 @@ fn get_ticket_at(tickets: &[Ticket], index: usize) -> Option<&Ticket> {
 //
 // WHY: Validate numeric inputs. Bad math doesn't panic but
 //      returns nonsense — Result catches that.
-fn calculate_refund(price: f64, percent: f64) -> Result<f64, String> {
-    if percent < 0.0 || percent > 100.0 {
-        return Err(format!(
-            "Invalid refund percentage: {percent}",
-            percent = percent
-        ));
-    }
-
-    if price < 0.0 {
-        return Err(format!("Invalid price: {price}", price = price));
-    }
-
-    return Ok(price * percent / 100.00);
-}
 
 // =============================================
 // STEP 9: Implement `process_booking`
@@ -252,12 +136,6 @@ fn calculate_refund(price: f64, percent: f64) -> Result<f64, String> {
 //
 // WHY: This is the capstone — combining Result, validation, and
 //      graceful error collection. No panics anywhere.
-
-fn process_booking(inputs: &[(&str, &str, &str, &str, f64)]) -> (Vec<Ticket>, Vec<String>) {
-    for (passenger, from, to, class_str, price) in inputs {
-        let ticket_class = parse_ticket_class(inputs)
-    }
-}
 
 // =============================================
 // STEP 10: Write `fn main()`
