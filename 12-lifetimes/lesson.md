@@ -36,69 +36,165 @@ reference remain valid?" across function boundaries.
 
 ---
 
-## 2. The `'a` Syntax
+## 2. Lifetime Annotations
 
-Lifetime annotations use a tick followed by a name: `'a`, `'b`, `'input`, and so on.
-They appear *in generic position*, right alongside type parameters.
+Lifetime annotations use a tick followed by a name: `'shared`, `'input`, `'a`, and so on.
+They appear in generic position, right alongside type parameters.
 
-The canonical example is a function that returns the longer of two string slices:
+Before seeing when you *need* them, it helps to see when you *don't*:
 
 ```rust
-fn longest<'a>(a: &'a str, b: &'a str) -> &'a str {
+// One input reference, one output reference.
+// The compiler can reason: the output must borrow from the input — what else could it be?
+fn first_word(s: &str) -> &str {
+    s.split_whitespace().next().unwrap_or("")
+}
+```
+
+No annotation needed. There is only one input reference, so the output must come from it.
+
+Now consider a function that picks the longer of two station names:
+
+```rust
+fn longest(a: &str, b: &str) -> &str {   // ERROR — will not compile
     if a.len() >= b.len() { a } else { b }
 }
 ```
 
-Read `'a` as "some lifetime that both inputs share". The annotation says:
+This fails. The compiler sees two input references and one output reference, but the
+output could come from *either* input depending on runtime values. It cannot figure out
+the relationship on its own, so it rejects the code.
 
-- Both `a` and `b` must be valid for at least `'a`.
-- The returned reference is valid for at most `'a`.
+You fix it by introducing a lifetime name and applying it to all three references:
 
-The compiler does not need to know the exact duration — it just needs to know that the
-return value cannot outlive either input.
+```rust
+fn longest<'shared>(a: &'shared str, b: &'shared str) -> &'shared str {
+    if a.len() >= b.len() { a } else { b }
+}
+```
 
-**Without the annotation this function cannot compile.** The compiler sees that the
-return borrows from one of two inputs, but it cannot determine which one, so it cannot
-verify the caller's usage is safe. The annotation gives it the information it needs.
+Read `'shared` as "some lifetime — I'll call it `shared`". The annotation says:
+- Both `a` and `b` must be valid for at least `'shared`.
+- The returned reference is valid for at most `'shared`.
 
-### What `'a` is not
+The compiler does not need to know the exact duration. It just needs a *label* so it can
+reason: "both inputs share `'shared`, and the return is tied to `'shared`, so the return
+cannot outlive either input."
 
-- It is not a measure of time in nanoseconds.
-- It does not change what code runs or when memory is freed.
-- It is purely a label that lets the compiler express "the return is tied to the inputs".
+### The `'a` convention
+
+In real Rust code you will almost always see `'a` rather than `'shared`. They mean
+exactly the same thing — `'a` is just a convention, the same way `T` is the conventional
+name for a generic type parameter. Once you understand that a lifetime annotation is
+simply a label, `'a` is less noise to read. This lesson uses descriptive names in new
+examples to make the concept clear, then switches to `'a` in the elision section where
+you will encounter it most often in practice.
+
+### What lifetime annotations are not
+
+- They are not a duration in nanoseconds.
+- They do not change what code runs or when memory is freed.
+- They are purely labels the compiler uses to verify references don't outlive their data.
 
 ---
 
 ## 3. Lifetime Elision
 
-Most functions that take and return references do *not* need explicit annotations because
-the compiler applies three *elision rules* automatically:
-
-1. **Each reference parameter gets its own lifetime.**
-   `fn foo(a: &str, b: &str)` becomes `fn foo<'a, 'b>(a: &'a str, b: &'b str)`.
-
-2. **If there is exactly one input reference lifetime, it is used for all output
-   references.**
-   `fn first_word(s: &str) -> &str` becomes `fn first_word<'a>(s: &'a str) -> &'a str`.
-
-3. **If one of the parameters is `&self` or `&mut self`, the lifetime of `self` is used
-   for all output references.**
-
-Rule 3 is why you can write `display_type` on a trait without any annotation:
+In the early days of Rust, **every** function that took or returned a reference required
+explicit lifetime annotations. Even trivial methods looked like this:
 
 ```rust
-// Why does this work without a lifetime annotation?
-fn display_type(&self) -> &str {
+// Old Rust — you had to write this
+fn display_type<'a>(&'a self) -> &'a str {
     "STATION"
 }
-// Elision rule 3: if there's a &self parameter, the return lifetime
-// is tied to self. The compiler fills in: fn display_type<'a>(&'a self) -> &'a str
-// The string literal "STATION" is 'static so it satisfies any lifetime.
+
+fn first_word<'a>(s: &'a str) -> &'a str {
+    s.split_whitespace().next().unwrap_or("")
+}
 ```
 
-The string literal `"STATION"` lives for the entire program (`'static`), so it is valid
-for any lifetime the caller might infer — including the lifetime of `self`. Elision
-handles the annotation; you never have to write it.
+This was extremely noisy. The Rust team noticed that the same patterns came up over and
+over again, and in those patterns the compiler could work out the annotation itself.
+They baked those patterns into the compiler as **elision rules** — places where you are
+allowed to omit the annotation because the answer is unambiguous.
+
+Today you write:
+
+```rust
+fn display_type(&self) -> &str { "STATION" }
+fn first_word(s: &str) -> &str { ... }
+```
+
+The compiler silently expands these to the verbose form. Nothing changes about what the
+code does — elision is purely a shorthand.
+
+### The three elision rules
+
+The compiler applies these rules in order. If they produce an unambiguous answer, no
+annotation is needed. If not, the compiler asks you to write one.
+
+**Rule 1** — each input reference gets its own independent lifetime.
+
+```rust
+fn foo(a: &str, b: &str)
+// compiler expands to:
+fn foo<'a, 'b>(a: &'a str, b: &'b str)
+```
+
+**Rule 2** — if there is exactly *one* input lifetime after rule 1, use it for all
+output references.
+
+```rust
+fn first_word(s: &str) -> &str
+// after rule 1: fn first_word<'a>(s: &'a str) -> &str
+// after rule 2: fn first_word<'a>(s: &'a str) -> &'a str  ✅ unambiguous
+```
+
+This is why `first_word` compiles without annotation — one input, one output, rule 2
+connects them automatically.
+
+**Rule 3** — if one of the inputs is `&self` or `&mut self`, the lifetime of `self` is
+used for all output references.
+
+```rust
+fn display_type(&self) -> &str
+// after rule 1: fn display_type<'a>(&'a self) -> &str
+// after rule 3: fn display_type<'a>(&'a self) -> &'a str  ✅ unambiguous
+```
+
+Rule 3 is why you never need to annotate methods that return a reference. When a method
+returns a reference, it almost always borrows from `self` — so tying the output to
+`self`'s lifetime is nearly always correct.
+
+### When elision is not enough
+
+Elision fails when none of the three rules produce an unambiguous answer. This is exactly
+what happened with `longest`:
+
+```rust
+fn longest(a: &str, b: &str) -> &str
+// after rule 1: fn longest<'a, 'b>(a: &'a str, b: &'b str) -> &str
+// rule 2: more than one input lifetime — doesn't apply
+// rule 3: no &self — doesn't apply
+// result: output lifetime still unknown → compiler asks you to annotate
+```
+
+Two input lifetimes, one output: the compiler cannot guess which input the output borrows
+from. You have to tell it explicitly with `<'a>`.
+
+### The `"STATION"` case
+
+```rust
+fn display_type(&self) -> &str {
+    "STATION"   // a string literal — lives for the entire program
+}
+```
+
+After elision, the compiler sees `-> &'a str` where `'a` is tied to `self`. The literal
+`"STATION"` has type `&'static str`, which lives longer than any `'a`. A reference that
+lives *longer* than required always satisfies a shorter lifetime, so this compiles fine.
+Elision handles the annotation; the `'static` nature of the literal handles the value.
 
 ---
 
@@ -108,20 +204,21 @@ When a struct holds a reference (rather than an owned value), it needs a lifetim
 parameter. The rule is simple: the struct cannot outlive the data it borrows.
 
 ```rust
-struct Announcement<'a> {
-    message: &'a str,
+struct Announcement<'msg> {
+    message: &'msg str,
     platform: u8,
 }
 
-impl<'a> Announcement<'a> {
+impl<'msg> Announcement<'msg> {
     fn display(&self) {
         println!("  Platform {}: {}", self.platform, self.message);
     }
 }
 ```
 
-The `'a` on `Announcement<'a>` tells the compiler: "an `Announcement` is only valid as
-long as the `message` it borrows is valid." If you try to use an `Announcement` after
+The `'msg` on `Announcement<'msg>` tells the compiler: "an `Announcement` is only valid
+as long as the `message` it borrows is valid." In practice you will see `'a` here, but
+`'msg` makes the intent obvious on first read. If you try to use an `Announcement` after
 `message` has been dropped, the compiler rejects it.
 
 ```rust
@@ -205,11 +302,13 @@ Rust pays for it once, at compile time, and then the binary runs with no overhea
 └──────────────────────────────────────────────────────────┘
 ```
 
-- **Lifetimes prevent dangling references** — the compiler checks at compile time.
-- **Elision covers the common cases** — you rarely write `'a` on methods with `&self`.
-- **Struct lifetimes** — any struct holding a reference needs a lifetime parameter.
-- **`'static`** — string literals and "no borrowed data" bounds.
-- **No runtime cost** — lifetimes are compile-time only; they do not affect the binary.
+- **Lifetimes prevent dangling references** — the compiler checks at compile time, not at runtime.
+- **You need `'a` when** there are multiple input references and the compiler can't tell which one the output borrows from.
+- **Elision = the compiler writes the annotation for you** — it applies three rules; if the answer is unambiguous, no annotation needed.
+- **Rule 3 (`&self`)** — method return references are almost always tied to `self`, so the compiler assumes that and you never have to write it.
+- **Struct lifetimes** — any struct holding a reference needs `<'a>`; the struct cannot outlive the data it borrows.
+- **`'static`** — string literals and any value with no borrowed data; satisfies any shorter lifetime requirement.
+- **No runtime cost** — lifetimes are compile-time only; they are completely erased from the binary.
 
 Lesson 13 builds on this with generics and how lifetime annotations interact with generic
 type parameters.

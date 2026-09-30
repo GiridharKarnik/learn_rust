@@ -39,7 +39,13 @@
 // Without the annotation the compiler cannot tell which input the
 // return comes from, so it rejects the function.
 
-// TODO: implement `longest` here
+fn longest<'a>(a: &'a str, b: &'a str) -> &'a str {
+    if a.len() > b.len() {
+        a
+    } else {
+        b
+    }
+}
 
 // =============================================
 // STEP 2: Define `Announcement` and implement `display`
