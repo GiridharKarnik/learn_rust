@@ -13,22 +13,23 @@ get_folder() {
     05)       echo "05-enums-and-pattern-matching" ;;
     06)       echo "06-option-result-and-error-handling" ;;
     07)       echo "07-collections" ;;
-    08)       echo "08-hashmaps" ;;
-    09)       echo "09-panics-and-defensive-programming" ;;
-    10)       echo "10-iterators" ;;
-    11)       echo "11-traits-and-generics" ;;
-    12)       echo "12-lifetimes" ;;
-    13)       echo "13-generics" ;;
-    14)       echo "14-json-serde" ;;
-    15)       echo "15-error-handling-thiserror" ;;
-    16)       echo "16-async-tokio" ;;
-    17)       echo "17-shared-state" ;;
-    18)       echo "18-sql-sqlx" ;;
+    08)       echo "08-tuples-and-ranges" ;;
+    09)       echo "09-hashmaps" ;;
+    10)       echo "10-panics-and-defensive-programming" ;;
+    11)       echo "11-iterators" ;;
+    12)       echo "12-traits-and-generics" ;;
+    13)       echo "13-lifetimes" ;;
+    14)       echo "14-generics" ;;
+    15)       echo "15-json-serde" ;;
+    16)       echo "16-error-handling-thiserror" ;;
+    17)       echo "17-async-tokio" ;;
+    18)       echo "18-shared-state" ;;
+    19)       echo "19-sql-sqlx" ;;
     *)        echo "" ;;
   esac
 }
 
-ALL_KEYS="01 02 02-bonus 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18"
+ALL_KEYS="01 02 02-bonus 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19"
 
 reset_lesson() {
   local key="$1"

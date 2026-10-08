@@ -1,96 +1,209 @@
-// =============================================================================
-// Exercise: Train Lookup Service
-// =============================================================================
+// =============================================
+// EXERCISE 15: Railway API Data Handler
+// =============================================
 //
-// Build a train lookup service with typed error handling using thiserror.
-// Each step builds on the previous one.
+// Build functions to serialize and deserialize railway data as JSON.
+// There is NO code provided — you write everything, including main().
+//
+// This exercises: serde, serde_json, Serialize, Deserialize, derive macros,
+// #[serde(tag)], #[serde(rename_all)], Option, enums, Vec, BTreeMap.
+//
+// Run with: cargo run
 //
 // Expected output:
 //
-//   === TRAIN LOOKUP SERVICE ===
+//   === RAILWAY JSON DATA HANDLER ===
 //
-//   --- Successful Lookups ---
-//   Found: #12001 Rajdhani Express (130 km/h)
-//   Found: #12007 Shatabdi Express (150 km/h)
+//   --- Serialized JSON ---
+//   [
+//     {
+//       "number": 12001,
+//       "name": "Rajdhani Express",
+//       "from": "Chennai",
+//       "to": "New Delhi",
+//       "status": {
+//         "type": "OnTime"
+//       },
+//       "speedKmh": 130.0
+//     },
+//     {
+//       "number": 12007,
+//       "name": "Shatabdi Express",
+//       "from": "Chennai",
+//       "to": "Bangalore",
+//       "status": {
+//         "type": "Delayed",
+//         "minutes": 45
+//       },
+//       "speedKmh": 150.0
+//     },
+//     {
+//       "number": 12245,
+//       "name": "Duronto Express",
+//       "from": "Chennai",
+//       "to": "Mumbai",
+//       "status": {
+//         "type": "OnTime"
+//       },
+//       "speedKmh": null
+//     },
+//     {
+//       "number": 22501,
+//       "name": "Tejas Express",
+//       "from": "Chennai",
+//       "to": "Madurai",
+//       "status": {
+//         "type": "Cancelled",
+//         "reason": "Track maintenance"
+//       },
+//       "speedKmh": null
+//     }
+//   ]
 //
-//   --- Error Cases ---
-//   Error: Train #99999 not found
-//   Error: Train name cannot be empty
-//   Error: Speed must be positive, got -50
+//   --- Deserialized Trains ---
+//     #12001 Rajdhani Express (OnTime)
+//     #12007 Shatabdi Express (Delayed { minutes: 45 })
+//     #12245 Duronto Express (OnTime)
+//     #22501 Tejas Express (Cancelled { reason: "Track maintenance" })
 //
-//   --- Parse from JSON ---
-//   Parsed: #12001 Rajdhani Express
-//   Parse error: JSON error: missing field `name`
+//   --- Delayed Trains ---
+//     Shatabdi Express — delayed by 45 minutes
 //
-//   --- Batch Lookup ---
-//     ✅ #12001 Rajdhani Express
-//     ❌ Train #99999 not found
-//     ✅ #12007 Shatabdi Express
-//     ❌ Train #55555 not found
-//   Results: 2 found, 2 errors
+//   --- Summary ---
+//   {
+//     "cancelled": 1,
+//     "delayed": 1,
+//     "on_time": 2,
+//     "total": 4
+//   }
 //
+//   --- Invalid JSON Test ---
+//     Error (expected): invalid type: map, expected a sequence at line 1 column 0
 //
-// STEP 1: Define `TrainError` enum using thiserror
-// -------------------------------------------------
-// Use #[derive(Debug, thiserror::Error)] and add these variants:
-//
-//   - NotFound(u32)
-//     Error message: "Train #{0} not found"
-//
-//   - EmptyName
-//     Error message: "Train name cannot be empty"
-//
-//   - InvalidSpeed(i32)
-//     Error message: "Speed must be positive, got {0}"
-//
-//   - Json(serde_json::Error)
-//     Error message: "JSON error: {0}"
-//     Use #[from] so serde_json::Error converts automatically with ?
-//
-//
-// STEP 2: Define `Train` struct
-// ------------------------------
-// Fields: number (u32), name (String), speed_kmh (u32)
-// Derive: Debug, Clone, serde::Deserialize
-//
-// Implement:
-//   - Train::new(number, name, speed_kmh) -> Train
-//   - Train::display(&self) -> String
-//     Returns: "#{number} {name} ({speed_kmh} km/h)"
-//
-//
-// STEP 3: Implement `validate_train`
-// -----------------------------------
-// fn validate_train(name: &str, speed: i32) -> Result<(), TrainError>
-//
-//   - If name (after trimming) is empty → Err(TrainError::EmptyName)
-//   - If speed <= 0 → Err(TrainError::InvalidSpeed(speed))
-//   - Otherwise → Ok(())
-//
-//
-// STEP 4: Implement `find_train`
-// -------------------------------
-// fn find_train(trains: &[Train], number: u32) -> Result<&Train, TrainError>
-//
-// Search through the slice for a train with matching number.
-// Return TrainError::NotFound if not found.
-//
-//
-// STEP 5: Implement `parse_train_json`
-// --------------------------------------
-// fn parse_train_json(json: &str) -> Result<Train, TrainError>
-//
-// Use serde_json::from_str(json) with the ? operator.
-// The #[from] attribute on the Json variant makes the conversion automatic.
-//
-//
-// STEP 6: Write main()
-// ---------------------
-// - Create a vec of 3 trains: Rajdhani Express (#12001, 130 km/h),
-//   Duronto Express (#12004, 120 km/h), Shatabdi Express (#12007, 150 km/h)
-// - Do successful lookups for #12001 and #12007
-// - Test each error case: not found (#99999), empty name, invalid speed (-50)
-// - Parse valid JSON and invalid JSON (missing "name" field)
-// - Batch lookup: try [12001, 99999, 12007, 55555], count successes and errors
+//   --- Merge Two JSON Arrays ---
+//     Merged 4 trains from two JSON arrays:
+//     #12001 Rajdhani Express
+//     #12007 Shatabdi Express
+//     #12245 Duronto Express
+//     #22501 Tejas Express
 
-fn main() {}
+// =============================================
+// STEP 1: Define the `TrainStatus` enum
+// =============================================
+// Variants:
+//   OnTime                          — unit variant
+//   Delayed { minutes: u32 }        — struct variant (NOT tuple — needed for tagged serialization)
+//   Cancelled { reason: String }    — struct variant
+//
+// Derive: Serialize, Deserialize, Debug, Clone
+// Add:    #[serde(tag = "type")]    — internally tagged, like TS discriminated unions
+//
+// This makes OnTime serialize as: {"type":"OnTime"}
+// and Delayed as: {"type":"Delayed","minutes":45}
+
+// =============================================
+// STEP 2: Define the `Train` struct
+// =============================================
+// Fields:
+//   number: u32
+//   name: String
+//   from: String
+//   to: String
+//   status: TrainStatus
+//   speed_kmh: Option<f64>         — None becomes null in JSON
+//
+// Derive: Serialize, Deserialize, Debug, Clone
+// Add:    #[serde(rename_all = "camelCase")]
+//         This converts snake_case field names to camelCase in JSON.
+//         So speed_kmh becomes "speedKmh" in JSON output.
+
+// =============================================
+// STEP 3: Implement `serialize_trains`
+// =============================================
+// fn serialize_trains(trains: &[Train]) -> Result<String, String>
+//
+// Use serde_json::to_string_pretty(trains) to get formatted JSON.
+// Map the serde_json error to String using .map_err(|e| e.to_string()).
+
+// =============================================
+// STEP 4: Implement `deserialize_trains`
+// =============================================
+// fn deserialize_trains(json: &str) -> Result<Vec<Train>, String>
+//
+// Use serde_json::from_str(json) to parse JSON into Vec<Train>.
+// Map the error to String.
+
+// =============================================
+// STEP 5: Implement `find_delayed`
+// =============================================
+// fn find_delayed(trains: &[Train]) -> Vec<&Train>
+//
+// Filter trains where status is Delayed (any number of minutes).
+// Hint: use matches!(t.status, TrainStatus::Delayed { .. })
+
+// =============================================
+// STEP 6: Implement `to_summary_json`
+// =============================================
+// fn to_summary_json(trains: &[Train]) -> Result<String, String>
+//
+// Count trains by status: total, on_time, delayed, cancelled.
+// Store counts in a BTreeMap<&str, usize> (BTreeMap keeps keys sorted
+// so the JSON output is deterministic — HashMap would randomize key order).
+//
+// Keys: "total", "on_time", "delayed", "cancelled"
+// Serialize to pretty JSON and return.
+
+// =============================================
+// STEP 7: Implement `merge_json_trains`
+// =============================================
+// fn merge_json_trains(json1: &str, json2: &str) -> Result<String, String>
+//
+// 1. Deserialize both JSON strings into Vec<Train>
+// 2. Combine them (extend the first with the second)
+// 3. Serialize back to pretty JSON
+
+// =============================================
+// STEP 8: Write `fn main()`
+// =============================================
+//
+// 1. Print "=== RAILWAY JSON DATA HANDLER ==="
+//
+// 2. Create a Vec of 4 trains:
+//    - Train { number: 12001, name: "Rajdhani Express",  from: "Chennai", to: "New Delhi",
+//      status: TrainStatus::OnTime, speed_kmh: Some(130.0) }
+//    - Train { number: 12007, name: "Shatabdi Express",  from: "Chennai", to: "Bangalore",
+//      status: TrainStatus::Delayed { minutes: 45 }, speed_kmh: Some(150.0) }
+//    - Train { number: 12245, name: "Duronto Express",   from: "Chennai", to: "Mumbai",
+//      status: TrainStatus::OnTime, speed_kmh: None }
+//    - Train { number: 22501, name: "Tejas Express",     from: "Chennai", to: "Madurai",
+//      status: TrainStatus::Cancelled { reason: "Track maintenance".to_string() }, speed_kmh: None }
+//
+// 3. Print "\n--- Serialized JSON ---"
+//    Serialize trains, print the JSON.
+//
+// 4. Print "\n--- Deserialized Trains ---"
+//    Deserialize the JSON back. For each train print:
+//      "  #{number} {name} ({status:?})"
+//
+// 5. Print "\n--- Delayed Trains ---"
+//    Call find_delayed. For each delayed train print:
+//      "  {name} — delayed by {minutes} minutes"
+//    (Use if let TrainStatus::Delayed { minutes } = &train.status)
+//
+// 6. Print "\n--- Summary ---"
+//    Call to_summary_json, print the result.
+//
+// 7. Print "\n--- Invalid JSON Test ---"
+//    Try deserializing: r#"{"not valid"#
+//    Print:  "  Error (expected): {error_message}"
+//
+// 8. Print "\n--- Merge Two JSON Arrays ---"
+//    Serialize trains[..2] and trains[2..] into two separate JSON strings.
+//    Call merge_json_trains to combine them.
+//    Deserialize the merged result, print:
+//      "  Merged {count} trains from two JSON arrays:"
+//    Then for each: "  #{number} {name}"
+
+fn main() {
+    // Your code here
+}

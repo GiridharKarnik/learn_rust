@@ -429,7 +429,7 @@ fn modify(train: &mut Train) {   // borrows mutably
 | `train.display()` | `train.display()` — same! |
 | `Train.create()` (static) | `Train::new()` (associated fn) |
 | `readonly name: string` | No single-field mutability — whole struct is `mut` or not |
-| Inheritance (`extends`) | Doesn't exist — use traits (Lesson 08) and composition |
+| Inheritance (`extends`) | Doesn't exist — use traits (Lesson 12) and composition |
 
 ---
 
@@ -441,7 +441,7 @@ fn modify(train: &mut Train) {   // borrows mutably
 4. `#[derive(Debug)]` lets you print structs with `{:?}`
 5. Structs own their data — when they die, their fields die
 6. No null fields — every field must be set at creation
-7. No inheritance — we'll use traits for shared behavior in Lesson 08
+7. No inheritance — we'll use traits for shared behavior in Lesson 12
 
 ---
 

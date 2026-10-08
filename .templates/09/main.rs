@@ -1,176 +1,147 @@
 // =============================================
-// EXERCISE 09: Railway Ticket Validator
+// EXERCISE 09: Station Directory
 // =============================================
 //
-// Build a crash-proof ticket validation system from scratch.
-// The goal: ZERO panics possible. Every error is handled gracefully.
+// Build a complete station directory system from scratch.
 // There is NO code provided — you write everything, including main().
 //
-// This exercises: Result, Option, validation, safe indexing, defensive patterns.
+// This exercises: structs, methods, HashMap, Option, entry API, sorting.
 //
 // Run with: cargo run
 //
 // Expected output:
 //
-//   === RAILWAY TICKET VALIDATOR ===
+//   === STATION DIRECTORY ===
 //
-//   --- Booking Errors ---
-//     Ticket #3: passenger name is empty
-//     Ticket #4: origin and destination are the same
-//     Unknown ticket class: XYZ
-//     Ticket #6: invalid price ₹-100.00
-//     Ticket #8: price ₹15000.00 exceeds maximum
+//   --- All Stations (sorted by code) ---
+//   BCT: Mumbai Central (Mumbai) — 9 platforms
+//   HWH: Howrah (Kolkata) — 23 platforms
+//   MAS: Chennai Central (Chennai) — 12 platforms
+//   NDLS: New Delhi (Delhi) — 16 platforms
+//   SBC: Bangalore City (Bangalore) — 10 platforms
 //
-//   --- Valid Tickets ---
-//     Ticket #1: Giridhar | Chennai → Bangalore | FirstAC | ₹1250.00
-//     Ticket #2: Priya | Mumbai → Delhi | Sleeper | ₹450.00
-//     Ticket #7: Suresh | Mumbai → Chennai | General | ₹350.00
+//   --- Station Lookup ---
+//   Looking up MAS: Found — Chennai Central (Chennai) — 12 platforms
+//   Looking up SBC: Found — Bangalore City (Bangalore) — 10 platforms
+//   Looking up XYZ: Not found
 //
-//   --- Safe Lookups ---
-//     Ticket #1: Found — Giridhar | Chennai → Bangalore
-//     Ticket #99: Not found
-//     Index 0: Found — Giridhar | Chennai → Bangalore
-//     Index 99: Not found (safe — no panic!)
+//   --- Trains Per City ---
+//   Chennai: 4 trains
+//   Bangalore: 2 trains
+//   Mumbai: 2 trains
+//   Delhi: 1 trains
+//   Kolkata: 1 trains
 //
-//   --- Refund Calculations ---
-//     85% refund on ₹1250.00: ₹1062.50
-//     150% refund: Error — Invalid refund percentage: 150
-//     Refund on ₹-500.00: Error — Invalid price: -500
+//   --- Stations By City ---
+//   Bangalore: ["Bangalore City"]
+//   Chennai: ["Chennai Central"]
+//   Delhi: ["New Delhi"]
+//   Kolkata: ["Howrah"]
+//   Mumbai: ["Mumbai Central"]
 
 // =============================================
-// STEP 1: Define `TicketClass` enum
+// STEP 1: Define the `Station` struct
 // =============================================
-// Variants: FirstAC, SecondAC, Sleeper, General
+// Fields: name (String), code (String), platforms (u32), city (String)
 // Derive: Debug, Clone
 
 // =============================================
-// STEP 2: Implement `parse_ticket_class`
+// STEP 2: Implement `Station` methods
 // =============================================
-// fn parse_ticket_class(input: &str) -> Result<TicketClass, String>
-//
-// Case-insensitive (use .to_lowercase()):
-//   "1a" or "first"     → Ok(FirstAC)
-//   "2a" or "second"    → Ok(SecondAC)
-//   "sl" or "sleeper"   → Ok(Sleeper)
-//   "gn" or "general"   → Ok(General)
-//   "" (empty)           → Err("Ticket class cannot be empty")
-//   anything else        → Err("Unknown ticket class: {input}")
-//
-// WHY: Return Result instead of panicking on bad input.
-
-// =============================================
-// STEP 3: Define `Ticket` struct
-// =============================================
-// Fields: id (u32), passenger (String), from (String), to (String),
-//         class (TicketClass), price (f64)
-// Derive: Debug, Clone
-
-// =============================================
-// STEP 4: Implement `Ticket` methods
-// =============================================
-// - fn new(id, passenger: &str, from: &str, to: &str, class: TicketClass, price: f64) -> Self
+// - fn new(name: &str, code: &str, platforms: u32, city: &str) -> Self
 // - fn display(&self) -> String
-//     Returns: "Ticket #{id}: {passenger} | {from} → {to} | {class:?} | ₹{price:.2}"
+//     Returns: "{code}: {name} ({city}) — {platforms} platforms"
+//     Example: "MAS: Chennai Central (Chennai) — 12 platforms"
 
 // =============================================
-// STEP 5: Implement `validate_ticket`
+// STEP 3: Implement `build_directory() -> HashMap<String, Station>`
 // =============================================
-// fn validate_ticket(ticket: &Ticket) -> Result<(), String>
+// Create a HashMap keyed by station code. Add these 5 stations:
+//   Code  | Name              | City       | Platforms
+//   MAS   | Chennai Central   | Chennai    | 12
+//   SBC   | Bangalore City    | Bangalore  | 10
+//   NDLS  | New Delhi         | Delhi      | 16
+//   BCT   | Mumbai Central    | Mumbai     | 9
+//   HWH   | Howrah            | Kolkata    | 23
 //
-// Check these conditions — return Err with message if any fail:
-//   - passenger name empty     → "Ticket #{id}: passenger name is empty"
-//   - from == to               → "Ticket #{id}: origin and destination are the same"
-//   - price <= 0               → "Ticket #{id}: invalid price ₹{price:.2}"
-//   - price > 10000            → "Ticket #{id}: price ₹{price:.2} exceeds maximum"
-//   - All checks pass          → Ok(())
-//
-// WHY: Validation returns Result, not panic. Caller decides what to do.
+// Use: let mut dir = HashMap::new();
+//      dir.insert("MAS".to_string(), Station::new(...));
+// Don't forget: use std::collections::HashMap;
 
 // =============================================
-// STEP 6: Implement `find_ticket`
+// STEP 4: Implement `lookup_station`
 // =============================================
-// fn find_ticket(tickets: &[Ticket], id: u32) -> Option<&Ticket>
+// fn lookup_station<'a>(directory: &'a HashMap<String, Station>, code: &str) -> Option<&'a Station>
 //
-// Search by id. Return Some or None. Never panic.
+// Use directory.get(code) — returns Option<&Station>.
+// This is a one-liner.
 
 // =============================================
-// STEP 7: Implement `get_ticket_at`
+// STEP 5: Implement `trains_per_city`
 // =============================================
-// fn get_ticket_at(tickets: &[Ticket], index: usize) -> Option<&Ticket>
+// fn trains_per_city(directory: &HashMap<String, Station>, trains: &[(String, String)]) -> HashMap<String, u32>
 //
-// Use tickets.get(index) — NOT tickets[index].
-// .get() returns Option, [] panics on out of bounds.
+// `trains` is a list of (from_code, to_code) pairs.
+// Count how many trains DEPART from each city.
 //
-// WHY: This is the #1 defensive pattern — safe indexing.
+// Steps:
+//   1. Create empty HashMap for counts
+//   2. For each (from_code, _) in trains:
+//      - Look up from_code in directory to get the city
+//      - Use entry API: *counts.entry(city).or_insert(0) += 1;
+//   3. Return counts
+//
+// Skip any from_code not found in the directory.
 
 // =============================================
-// STEP 8: Implement `calculate_refund`
+// STEP 6: Implement `stations_by_city`
 // =============================================
-// fn calculate_refund(price: f64, percent: f64) -> Result<f64, String>
+// fn stations_by_city(directory: &HashMap<String, Station>) -> HashMap<String, Vec<String>>
 //
-//   percent < 0 or > 100  → Err("Invalid refund percentage: {percent}")
-//   price < 0             → Err("Invalid price: {price}")
-//   otherwise             → Ok(price * percent / 100.0)
+// Group station NAMES by their city.
 //
-// WHY: Validate numeric inputs. Bad math doesn't panic but
-//      returns nonsense — Result catches that.
+// Use entry API grouping pattern:
+//   grouped.entry(station.city.clone())
+//       .or_insert_with(Vec::new)
+//       .push(station.name.clone());
 
 // =============================================
-// STEP 9: Implement `process_booking`
+// STEP 7: Implement `display_directory`
 // =============================================
-// fn process_booking(inputs: &[(&str, &str, &str, &str, f64)]) -> (Vec<Ticket>, Vec<String>)
+// fn display_directory(directory: &HashMap<String, Station>)
 //
-// Takes raw booking data: (passenger, from, to, class_str, price)
-// Returns: (valid_tickets, error_messages)
-//
-// For each input:
-//   1. Parse class_str with parse_ticket_class
-//      → If Err, push the error message into errors and skip this booking
-//   2. Create a Ticket (auto-incrementing id starting from 1)
-//   3. Validate with validate_ticket
-//      → If Err, push the error message into errors and skip
-//   4. If all passed, push ticket into valid_tickets
-//
-// NOTE: id increments for EVERY attempt, not just successful ones.
-//       So the first booking is #1, the second is #2, even if #1 failed.
-//
-// WHY: This is the capstone — combining Result, validation, and
-//      graceful error collection. No panics anywhere.
+// Print all stations sorted by code.
+// Steps:
+//   1. Collect keys: let mut codes: Vec<&String> = directory.keys().collect();
+//   2. Sort: codes.sort();
+//   3. Loop and print each using station.display()
 
 // =============================================
-// STEP 10: Write `fn main()`
+// STEP 8: Write `fn main()`
 // =============================================
 //
-// 1. Print "=== RAILWAY TICKET VALIDATOR ==="
+// 1. Print "=== STATION DIRECTORY ==="
 //
-// 2. Define booking inputs:
-//   ("Giridhar", "Chennai", "Bangalore", "1A", 1250.00)     ← valid
-//   ("Priya", "Mumbai", "Delhi", "SL", 450.00)              ← valid
-//   ("", "Chennai", "Mumbai", "2A", 800.00)                 ← empty passenger
-//   ("Arjun", "Bangalore", "Bangalore", "GN", 200.00)       ← same from/to
-//   ("Meera", "Delhi", "Chennai", "XYZ", 500.00)            ← invalid class
-//   ("Ravi", "Chennai", "Kolkata", "1A", -100.00)           ← negative price
-//   ("Suresh", "Mumbai", "Chennai", "general", 350.00)      ← valid
-//   ("Anita", "Chennai", "Delhi", "first", 15000.00)        ← price too high
+// 2. Print "--- All Stations (sorted by code) ---"
+//    Call display_directory()
 //
-// 3. Call process_booking
+// 3. Print "--- Station Lookup ---"
+//    Look up "MAS", "SBC", "XYZ" using lookup_station()
+//    Use match: Some → print found info, None → print "Not found"
 //
-// 4. Print "--- Booking Errors ---"
-//    Print each error with "  " indent
+// 4. Print "--- Trains Per City ---"
+//    Create this train route list:
+//      vec![
+//          ("MAS", "SBC"),  ("MAS", "NDLS"), ("BCT", "NDLS"),
+//          ("SBC", "MAS"),  ("MAS", "BCT"),  ("HWH", "NDLS"),
+//          ("NDLS", "MAS"), ("BCT", "HWH"),  ("SBC", "HWH"),
+//          ("MAS", "HWH"),
+//      ]
+//    (Convert each &str to String with .to_string())
+//    Call trains_per_city(), sort result by count descending, print each
 //
-// 5. Print "--- Valid Tickets ---"
-//    Print each ticket with ticket.display()
-//
-// 6. Print "--- Safe Lookups ---"
-//    find_ticket for id 1 → print found info
-//    find_ticket for id 99 → print "Not found"
-//    get_ticket_at index 0 → print found info
-//    get_ticket_at index 99 → print "Not found (safe — no panic!)"
-//
-// 7. Print "--- Refund Calculations ---"
-//    calculate_refund(1250.0, 85.0) → print Ok result
-//    calculate_refund(1250.0, 150.0) → print Err
-//    calculate_refund(-500.0, 85.0) → print Err
+// 5. Print "--- Stations By City ---"
+//    Call stations_by_city(), sort by city name, print each
 
 fn main() {
     // Your code here

@@ -1,108 +1,161 @@
 // =============================================
-// EXERCISE 12: Lifetimes
+// EXERCISE 12: Railway Display System
 // =============================================
 //
-// Practice the three core lifetime patterns:
-//   - Annotated functions that return a reference derived from their inputs
-//   - Structs that hold references
-//   - Functions over slices of references
+// Build a system where multiple types (Train, Station, Route) share common
+// behavior through traits.
 //
 // You know: variables, functions, ownership, structs, enums, Option, Result,
-// Vec, HashMap, iterators, traits. Now add lifetimes to your toolkit.
+// Vec, HashMap, iterators, panics. Now add traits to your toolkit.
 //
 // Run with: cargo run
 //
 // Expected output:
 //
-//   === LIFETIME DEMO ===
+//   === RAILWAY DISPLAY SYSTEM ===
 //
-//   --- longest ---
-//     Longer station name: Thiruvananthapuram Central
+//   --- All Trains ---
+//   [TRAIN] #12001 Rajdhani Express (130km/h)
+//   [TRAIN] #12007 Shatabdi Express (150km/h)
+//   [TRAIN] #20601 Vande Bharat Express (160km/h)
 //
-//   --- Announcement ---
-//     Platform 3: Rajdhani Express departing in 5 minutes
+//   --- All Stations ---
+//   [STATION] Chennai Central [MAS] — 17 platforms
+//   [STATION] New Delhi [NDLS] — 16 platforms
+//   [STATION] Mumbai CST [CSMT] — 18 platforms
 //
-//   --- first_departure ---
-//     First on board: Chennai → Mumbai
+//   --- All Routes ---
+//   [ROUTE] Chennai → New Delhi (2180km)
+//   [ROUTE] Chennai → Mumbai (1280km)
+//   [ROUTE] Chennai → Bangalore (350km)
+//
+//   --- Display with println! (Display trait) ---
+//   #12001 Rajdhani Express (130km/h)
+//   Chennai Central [MAS]
+//   Chennai → New Delhi (2180km)
+//
+//   --- impl Trait Return ---
+//   [ROUTE] Kolkata → Darjeeling (600km)
 //
 //   === DONE ===
 
-// =============================================
-// STEP 1: Write `longest`
-// =============================================
-// fn longest<'a>(a: &'a str, b: &'a str) -> &'a str
-//
-// Return whichever string is longer (use .len()).
-//
-// Hint: this is the canonical lifetime annotation example.
-// Both inputs share lifetime 'a; the return borrows from one of them.
-// Without the annotation the compiler cannot tell which input the
-// return comes from, so it rejects the function.
-
-// TODO: implement `longest` here
+#[allow(unused_imports)]
+use std::fmt;
 
 // =============================================
-// STEP 2: Define `Announcement` and implement `display`
+// STEP 1: Define the `Displayable` trait
 // =============================================
-// struct Announcement<'a> with fields:
-//   message: &'a str
-//   platform: u8
+// Required methods:
+//   fn display_line(&self) -> String
+//   fn display_type(&self) -> &str
 //
-// Implement a method:
-//   fn display(&self)
-//   prints: "  Platform {platform}: {message}"
-//
-// The struct cannot outlive the string slice it borrows.
-
-// TODO: define `Announcement` and its impl block here
+// Default method:
+//   fn display_full(&self) -> String
+//     returns: "[{display_type}] {display_line}"
 
 // =============================================
-// STEP 3: Write `first_departure`
+// STEP 2: Define `Train` struct and implement `Displayable`
 // =============================================
-// fn first_departure<'a>(departures: &'a [&str]) -> Option<&'a str>
+// Fields: number: u32, name: String, speed_kmh: u32
+// Derive: Debug, Clone, PartialEq
 //
-// Return the first element of the slice.
-// Hint: departures.first().copied()
+// display_line: "#{number} {name} ({speed_kmh}km/h)"
+// display_type: "TRAIN"
 
-// TODO: implement `first_departure` here
+// =============================================
+// STEP 3: Define `Station` struct and implement `Displayable`
+// =============================================
+// Fields: name: String, code: String, platforms: u8
+// Derive: Debug, Clone, PartialEq
+//
+// display_line: "{name} [{code}] — {platforms} platforms"
+//   (note: the dash is an em-dash —, not a hyphen)
+// display_type: "STATION"
 
 // =============================================
-// STEP 4: Write main()
+// STEP 4: Define `Route` struct and implement `Displayable`
+// =============================================
+// Fields: from: String, to: String, distance_km: u32, trains: Vec<String>
+// Derive: Debug, Clone, PartialEq
+//
+// display_line: "{from} → {to} ({distance_km}km)"
+// display_type: "ROUTE"
+
+// =============================================
+// STEP 5: Implement `fmt::Display` for Train, Station, Route
+// =============================================
+// Train:   "#{number} {name} ({speed_kmh}km/h)"
+// Station: "{name} [{code}]"
+// Route:   "{from} → {to} ({distance_km}km)"
+//
+// This lets you write: println!("{}", train);
+
+// =============================================
+// STEP 6: Add a constructor to Route
+// =============================================
+// Add a `new` associated function inside an `impl Route` block:
+//   fn new(from: &str, to: &str, distance_km: u32) -> Self
+//
+// Callers pass &str — the constructor handles .to_string() internally.
+// Set trains to vec![].
+//
+// impl Route {
+//     fn new(from: &str, to: &str, distance_km: u32) -> Self {
+//         Route { from: from.to_string(), ... }
+//     }
+// }
+
+// =============================================
+// STEP 7: Write `make_summary_route`
+// =============================================
+// fn make_summary_route(from: &str, to: &str, distance_km: u32) -> impl Displayable
+//
+// Return a Route { from, to, distance_km, trains: vec![] }.
+// The caller only sees `impl Displayable` — not that it's a Route.
+//
+// Key rule: every return path must produce the same concrete type.
+// (To return Train OR Route depending on a condition, you'd need
+// Box<dyn Displayable> instead — a later topic.)
+
+// =============================================
+// STEP 8: Write main()
 // =============================================
 //
-// 1. Print "=== LIFETIME DEMO ==="
+// 1. Print "=== RAILWAY DISPLAY SYSTEM ==="
 //
-// 2. Print "" (blank line)
+// 2. Create a Vec of trains:
+//    Train { number: 12001, name: "Rajdhani Express",      speed_kmh: 130 }
+//    Train { number: 12007, name: "Shatabdi Express",      speed_kmh: 150 }
+//    Train { number: 20601, name: "Vande Bharat Express",  speed_kmh: 160 }
 //
-// 3. Print "--- longest ---"
-//    let name1 = String::from("Chennai Central");
-//    let result;
-//    {
-//        let name2 = String::from("Thiruvananthapuram Central");
-//        result = longest(name1.as_str(), name2.as_str());
-//        println!("  Longer station name: {result}");
-//    }
-//    (Note: result is used inside the inner scope where name2 is alive.
-//     Try moving the println! outside the braces and watch the compiler
-//     reject it — that is the borrow checker doing its job.)
+// 3. Create a Vec of stations:
+//    Station { name: "Chennai Central", code: "MAS",  platforms: 17 }
+//    Station { name: "New Delhi",       code: "NDLS", platforms: 16 }
+//    Station { name: "Mumbai CST",      code: "CSMT", platforms: 18 }
 //
-// 4. Print "" (blank line)
+// 4. Create a Vec of routes using Route::new():
+//    Route::new("Chennai", "New Delhi",  2180)
+//    Route::new("Chennai", "Mumbai",     1280)
+//    Route::new("Chennai", "Bangalore",   350)
 //
-// 5. Print "--- Announcement ---"
-//    let msg = String::from("Rajdhani Express departing in 5 minutes");
-//    let ann = Announcement { message: &msg, platform: 3 };
-//    ann.display();
+// 5. Print "--- All Trains ---"
+//    For each train, print: "  {display_full}"   (two spaces indent)
 //
-// 6. Print "" (blank line)
+// 6. Print "--- All Stations ---"
+//    For each station, print: "  {display_full}"   (two spaces indent)
 //
-// 7. Print "--- first_departure ---"
-//    let departures = vec!["Chennai → Mumbai", "Delhi → Agra", "Kolkata → Darjeeling"];
-//    if let Some(first) = first_departure(&departures) {
-//        println!("  First on board: {first}");
-//    }
+// 7. Print "--- All Routes ---"
+//    For each route, print: "  {display_full}"   (two spaces indent)
 //
-// 8. Print "" (blank line)
+// 8. Print "--- Display with println! (Display trait) ---"
+//    println!("  {}", trains[0]);
+//    println!("  {}", stations[0]);
+//    println!("  {}", routes[0]);
 //
-// 9. Print "=== DONE ==="
+// 9. Print "--- impl Trait Return ---"
+//     let summary = make_summary_route("Kolkata", "Darjeeling", 600);
+//     println!("  {}", summary.display_full());
+//
+// 10. Print "=== DONE ==="
 
 fn main() {}

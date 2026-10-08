@@ -1,147 +1,120 @@
 // =============================================
-// EXERCISE 08: Station Directory
+// EXERCISE 08: Platform Scheduler
 // =============================================
 //
-// Build a complete station directory system from scratch.
+// Build a complete platform scheduler from scratch.
 // There is NO code provided — you write everything, including main().
 //
-// This exercises: structs, methods, HashMap, Option, entry API, sorting.
+// This exercises: tuples, destructuring, ranges, range match patterns, slicing.
 //
 // Run with: cargo run
 //
 // Expected output:
 //
-//   === STATION DIRECTORY ===
+//   === PLATFORM SCHEDULER ===
 //
-//   --- All Stations (sorted by code) ---
-//   BCT: Mumbai Central (Mumbai) — 9 platforms
-//   HWH: Howrah (Kolkata) — 23 platforms
-//   MAS: Chennai Central (Chennai) — 12 platforms
-//   NDLS: New Delhi (Delhi) — 16 platforms
-//   SBC: Bangalore City (Bangalore) — 10 platforms
+//   --- Full Schedule (6 stops) ---
+//     Rajdhani Express (platform 1) — limit 130 km/h [fast]
+//     Shatabdi Express (platform 2) — limit 150 km/h [fast]
+//     Duronto Express (platform 3) — limit 120 km/h [moderate]
+//     Vande Bharat Express (platform 4) — limit 180 km/h [fast]
+//     Kovai Express (platform 5) — limit 110 km/h [moderate]
+//     Island Express (platform 6) — limit 100 km/h [moderate]
 //
-//   --- Station Lookup ---
-//   Looking up MAS: Found — Chennai Central (Chennai) — 12 platforms
-//   Looking up SBC: Found — Bangalore City (Bangalore) — 10 platforms
-//   Looking up XYZ: Not found
+//   --- Fastest Stop ---
+//     Fastest: Vande Bharat Express (platform 4) — limit 180 km/h
 //
-//   --- Trains Per City ---
-//   Chennai: 4 trains
-//   Bangalore: 2 trains
-//   Mumbai: 2 trains
-//   Delhi: 1 trains
-//   Kolkata: 1 trains
+//   --- Stops in Speed Range (100-130 km/h) ---
+//     Rajdhani Express
+//     Duronto Express
+//     Kovai Express
+//     Island Express
 //
-//   --- Stations By City ---
-//   Bangalore: ["Bangalore City"]
-//   Chennai: ["Chennai Central"]
-//   Delhi: ["New Delhi"]
-//   Kolkata: ["Howrah"]
-//   Mumbai: ["Mumbai Central"]
+//   --- Platforms Window (index 1..4) ---
+//     Shatabdi Express (platform 2) — limit 150 km/h [fast]
+//     Duronto Express (platform 3) — limit 120 km/h [moderate]
+//     Vande Bharat Express (platform 4) — limit 180 km/h [fast]
 
 // =============================================
-// STEP 1: Define the `Station` struct
+// STEP 1: Implement `describe_stop`
 // =============================================
-// Fields: name (String), code (String), platforms (u32), city (String)
-// Derive: Debug, Clone
+// fn describe_stop((name, platform, speed): (&str, u8, u32)) -> String
+//
+// Destructure the tuple parameter directly in the signature.
+// Returns: "{name} (platform {platform}) — limit {speed} km/h"
 
 // =============================================
-// STEP 2: Implement `Station` methods
+// STEP 2: Implement `build_schedule() -> Vec<(&'static str, u8, u32)>`
 // =============================================
-// - fn new(name: &str, code: &str, platforms: u32, city: &str) -> Self
-// - fn display(&self) -> String
-//     Returns: "{code}: {name} ({city}) — {platforms} platforms"
-//     Example: "MAS: Chennai Central (Chennai) — 12 platforms"
+// Return a vec! of (name, platform, speed_kmh) tuples:
+//   ("Rajdhani Express",      1, 130)
+//   ("Shatabdi Express",      2, 150)
+//   ("Duronto Express",       3, 120)
+//   ("Vande Bharat Express",  4, 180)
+//   ("Kovai Express",         5, 110)
+//   ("Island Express",       6, 100)
 
 // =============================================
-// STEP 3: Implement `build_directory() -> HashMap<String, Station>`
+// STEP 3: Implement `fastest_stop`
 // =============================================
-// Create a HashMap keyed by station code. Add these 5 stations:
-//   Code  | Name              | City       | Platforms
-//   MAS   | Chennai Central   | Chennai    | 12
-//   SBC   | Bangalore City    | Bangalore  | 10
-//   NDLS  | New Delhi         | Delhi      | 16
-//   BCT   | Mumbai Central    | Mumbai     | 9
-//   HWH   | Howrah            | Kolkata    | 23
+// fn fastest_stop<'a>(schedule: &[(&'a str, u8, u32)]) -> (&'a str, u8, u32)
 //
-// Use: let mut dir = HashMap::new();
-//      dir.insert("MAS".to_string(), Station::new(...));
-// Don't forget: use std::collections::HashMap;
+// Walk the slice and return the tuple with the highest speed (field .2).
+// Start with schedule[0] as the running fastest.
+// Note the lifetime: the returned tuple borrows &str data from the input slice.
 
 // =============================================
-// STEP 4: Implement `lookup_station`
+// STEP 4: Implement `stops_in_speed_range`
 // =============================================
-// fn lookup_station<'a>(directory: &'a HashMap<String, Station>, code: &str) -> Option<&'a Station>
+// fn stops_in_speed_range<'a>(
+//     schedule: &[(&'a str, u8, u32)],
+//     range: std::ops::RangeInclusive<u32>,
+// ) -> Vec<&'a str>
 //
-// Use directory.get(code) — returns Option<&Station>.
-// This is a one-liner.
+// Return the names of every stop whose speed falls inside `range`.
+// Hint: range.contains(&speed)
 
 // =============================================
-// STEP 5: Implement `trains_per_city`
+// STEP 5: Implement `classify_speed`
 // =============================================
-// fn trains_per_city(directory: &HashMap<String, Station>, trains: &[(String, String)]) -> HashMap<String, u32>
+// fn classify_speed(speed_kmh: u32) -> &'static str
 //
-// `trains` is a list of (from_code, to_code) pairs.
-// Count how many trains DEPART from each city.
-//
-// Steps:
-//   1. Create empty HashMap for counts
-//   2. For each (from_code, _) in trains:
-//      - Look up from_code in directory to get the city
-//      - Use entry API: *counts.entry(city).or_insert(0) += 1;
-//   3. Return counts
-//
-// Skip any from_code not found in the directory.
+// Use a match with inclusive range patterns:
+//   0..=59    => "slow"
+//   60..=120  => "moderate"
+//   121..=200 => "fast"
+//   _         => "very fast"
 
 // =============================================
-// STEP 6: Implement `stations_by_city`
+// STEP 6: Implement `platforms_window`
 // =============================================
-// fn stations_by_city(directory: &HashMap<String, Station>) -> HashMap<String, Vec<String>>
+// fn platforms_window<'a>(
+//     schedule: &'a [(&'a str, u8, u32)],
+//     range: std::ops::Range<usize>,
+// ) -> &'a [(&'a str, u8, u32)]
 //
-// Group station NAMES by their city.
-//
-// Use entry API grouping pattern:
-//   grouped.entry(station.city.clone())
-//       .or_insert_with(Vec::new)
-//       .push(station.name.clone());
+// Return the sub-slice at the given index range: &schedule[range]
 
 // =============================================
-// STEP 7: Implement `display_directory`
+// STEP 7: Write `fn main()`
 // =============================================
-// fn display_directory(directory: &HashMap<String, Station>)
+// Build the schedule, then:
 //
-// Print all stations sorted by code.
-// Steps:
-//   1. Collect keys: let mut codes: Vec<&String> = directory.keys().collect();
-//   2. Sort: codes.sort();
-//   3. Loop and print each using station.display()
-
-// =============================================
-// STEP 8: Write `fn main()`
-// =============================================
+// 1. Print "=== PLATFORM SCHEDULER ==="
 //
-// 1. Print "=== STATION DIRECTORY ==="
+// 2. Print "--- Full Schedule ({count} stops) ---"
+//    Loop through the schedule, print each using describe_stop(),
+//    with its classify_speed() result in brackets: "  {describe} [{class}]"
 //
-// 2. Print "--- All Stations (sorted by code) ---"
-//    Call display_directory()
+// 3. Print "--- Fastest Stop ---"
+//    Call fastest_stop(), print "  Fastest: {describe_stop(...)}"
 //
-// 3. Print "--- Station Lookup ---"
-//    Look up "MAS", "SBC", "XYZ" using lookup_station()
-//    Use match: Some → print found info, None → print "Not found"
+// 4. Print "--- Stops in Speed Range (100-130 km/h) ---"
+//    Call stops_in_speed_range(&schedule, 100..=130), print each name
 //
-// 4. Print "--- Trains Per City ---"
-//    Create this train route list:
-//      vec![
-//          ("MAS", "SBC"),  ("MAS", "NDLS"), ("BCT", "NDLS"),
-//          ("SBC", "MAS"),  ("MAS", "BCT"),  ("HWH", "NDLS"),
-//          ("NDLS", "MAS"), ("BCT", "HWH"),  ("SBC", "HWH"),
-//          ("MAS", "HWH"),
-//      ]
-//    (Convert each &str to String with .to_string())
-//    Call trains_per_city(), sort result by count descending, print each
-//
-// 5. Print "--- Stations By City ---"
-//    Call stations_by_city(), sort by city name, print each
+// 5. Print "--- Platforms Window (index 1..4) ---"
+//    Call platforms_window(&schedule, 1..4), print each stop with its
+//    classification, same format as step 2
 
 fn main() {
     // Your code here

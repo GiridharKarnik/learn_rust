@@ -1,186 +1,176 @@
 // =============================================
-// EXERCISE 09: Railway Data Pipeline
+// EXERCISE 10: Railway Ticket Validator
 // =============================================
 //
-// Build a complete data analysis pipeline from scratch.
+// Build a crash-proof ticket validation system from scratch.
+// The goal: ZERO panics possible. Every error is handled gracefully.
 // There is NO code provided — you write everything, including main().
 //
-// This exercises: structs, methods, Vec, HashMap, and iterator chains.
+// This exercises: Result, Option, validation, safe indexing, defensive patterns.
 //
 // Run with: cargo run
 //
 // Expected output:
 //
-//   === RAILWAY DATA PIPELINE ===
+//   === RAILWAY TICKET VALIDATOR ===
 //
-//   --- Timetable ---
-//   #12001 Rajdhani Express: Chennai → New Delhi (2180 km, ₹4250.00)
-//   #12007 Shatabdi Express: Chennai → Bangalore (350 km, ₹755.50)
-//   #12245 Duronto Express: Chennai → Mumbai (1280 km, ₹2100.00)
-//   #12675 Kovai Express: Chennai → Coimbatore (500 km, ₹350.00)
-//   #16525 Island Express: Bangalore → Kanyakumari (890 km, ₹625.00)
-//   #12625 Thiruvananthapuram Mail: Chennai → Thiruvananthapuram (920 km, ₹780.00)
-//   #22501 Tejas Express: Chennai → Madurai (460 km, ₹1200.00)
-//   #20601 Vande Bharat Express: Chennai → Bangalore (350 km, ₹1850.00)
+//   --- Booking Errors ---
+//     Ticket #3: passenger name is empty
+//     Ticket #4: origin and destination are the same
+//     Unknown ticket class: XYZ
+//     Ticket #6: invalid price ₹-100.00
+//     Ticket #8: price ₹15000.00 exceeds maximum
 //
-//   --- Top 3 Revenue Trains ---
-//   1. Vande Bharat Express — ₹11100000.00/day
-//   2. Tejas Express — ₹9600000.00/day
-//   3. Kovai Express — ₹1925000.00/day
+//   --- Valid Tickets ---
+//     Ticket #1: Giridhar | Chennai → Bangalore | FirstAC | ₹1250.00
+//     Ticket #2: Priya | Mumbai → Delhi | Sleeper | ₹450.00
+//     Ticket #7: Suresh | Mumbai → Chennai | General | ₹350.00
 //
-//   --- Average Fare by Route ---
-//   Bangalore → Kanyakumari: ₹625.00
-//   Chennai → Bangalore: ₹1302.75
-//   Chennai → Coimbatore: ₹350.00
-//   Chennai → Madurai: ₹1200.00
-//   Chennai → Mumbai: ₹2100.00
-//   Chennai → New Delhi: ₹4250.00
-//   Chennai → Thiruvananthapuram: ₹780.00
+//   --- Safe Lookups ---
+//     Ticket #1: Found — Giridhar | Chennai → Bangalore
+//     Ticket #99: Not found
+//     Index 0: Found — Giridhar | Chennai → Bangalore
+//     Index 99: Not found (safe — no panic!)
 //
-//   --- Reliability Report ---
-//   Excellent (>= 95%):
-//     Vande Bharat Express (97.2%)
-//   Good (80–94.9%):
-//     Rajdhani Express (92.5%)
-//     Shatabdi Express (88.0%)
-//     Duronto Express (85.3%)
-//     Tejas Express (94.1%)
-//   Needs Improvement (< 80%):
-//     Kovai Express (72.4%)
-//     Island Express (78.9%)
-//     Thiruvananthapuram Mail (65.0%)
-//
-//   --- Total Stats ---
-//   Total distance: 6930 km
-//   Total daily passengers: 38200
-//   Average on-time: 84.18%
-//   Most popular: Tejas Express (8000 passengers/day)
-//   Longest route: Rajdhani Express (2180 km)
-//
-//   --- Long-Distance Trains (>= 500 km), Cheapest First ---
-//   1. Kovai Express (500 km) — ₹350.00
-//   2. Island Express (890 km) — ₹625.00
-//   3. Thiruvananthapuram Mail (920 km) — ₹780.00
-//   4. Duronto Express (1280 km) — ₹2100.00
-//   5. Rajdhani Express (2180 km) — ₹4250.00
-
-use std::collections::HashMap;
+//   --- Refund Calculations ---
+//     85% refund on ₹1250.00: ₹1062.50
+//     150% refund: Error — Invalid refund percentage: 150
+//     Refund on ₹-500.00: Error — Invalid price: -500
 
 // =============================================
-// STEP 1: Define the `TrainRecord` struct
+// STEP 1: Define `TicketClass` enum
 // =============================================
-// Fields:
-//   number: u32, name: String, from: String, to: String,
-//   distance_km: u32, fare: f64, on_time_percent: f64, daily_passengers: u32
+// Variants: FirstAC, SecondAC, Sleeper, General
 // Derive: Debug, Clone
 
 // =============================================
-// STEP 2: Implement `TrainRecord` methods
+// STEP 2: Implement `parse_ticket_class`
 // =============================================
-// - fn new(number: u32, name: &str, from: &str, to: &str,
-//          distance_km: u32, fare: f64, on_time_percent: f64,
-//          daily_passengers: u32) -> Self
+// fn parse_ticket_class(input: &str) -> Result<TicketClass, String>
 //
-// - fn revenue(&self) -> f64
-//     Returns: fare * daily_passengers as f64
-//     Used by top_revenue_trains — not busywork.
+// Case-insensitive (use .to_lowercase()):
+//   "1a" or "first"     → Ok(FirstAC)
+//   "2a" or "second"    → Ok(SecondAC)
+//   "sl" or "sleeper"   → Ok(Sleeper)
+//   "gn" or "general"   → Ok(General)
+//   "" (empty)           → Err("Ticket class cannot be empty")
+//   anything else        → Err("Unknown ticket class: {input}")
 //
-// - fn display_short(&self) -> String
-//     Returns: "#{number} {name}: {from} → {to} ({distance_km} km, ₹{fare:.2})"
-//     Used by format_timetable — not busywork.
+// WHY: Return Result instead of panicking on bad input.
 
 // =============================================
-// STEP 3: Implement `build_records() -> Vec<TrainRecord>`
+// STEP 3: Define `Ticket` struct
 // =============================================
-// Return a vec! with these 8 trains using TrainRecord::new():
-//   (12001, "Rajdhani Express",        "Chennai", "New Delhi",          2180, 4250.00, 92.5, 3000)
-//   (12007, "Shatabdi Express",        "Chennai", "Bangalore",          350,  755.50, 88.0, 4500)
-//   (12245, "Duronto Express",         "Chennai", "Mumbai",            1280, 2100.00, 85.3, 2200)
-//   (12675, "Kovai Express",           "Chennai", "Coimbatore",         500,  350.00, 72.4, 5500)
-//   (16525, "Island Express",          "Bangalore", "Kanyakumari",      890,  625.00, 78.9, 3200)
-//   (12625, "Thiruvananthapuram Mail", "Chennai", "Thiruvananthapuram",  920,  780.00, 65.0, 5800)
-//   (22501, "Tejas Express",           "Chennai", "Madurai",            460, 1200.00, 94.1, 8000)
-//   (20601, "Vande Bharat Express",    "Chennai", "Bangalore",          350, 1850.00, 97.2, 6000)
+// Fields: id (u32), passenger (String), from (String), to (String),
+//         class (TicketClass), price (f64)
+// Derive: Debug, Clone
 
 // =============================================
-// STEP 4: Implement `format_timetable`
+// STEP 4: Implement `Ticket` methods
 // =============================================
-// fn format_timetable(records: &[TrainRecord]) -> String
-//
-// Use: records.iter().map(|r| r.display_short()).collect::<Vec<_>>().join("\n")
-// This is the most common iterator pattern: .map().collect().join()
+// - fn new(id, passenger: &str, from: &str, to: &str, class: TicketClass, price: f64) -> Self
+// - fn display(&self) -> String
+//     Returns: "Ticket #{id}: {passenger} | {from} → {to} | {class:?} | ₹{price:.2}"
 
 // =============================================
-// STEP 5: Implement `top_revenue_trains`
+// STEP 5: Implement `validate_ticket`
 // =============================================
-// fn top_revenue_trains(records: &[TrainRecord], n: usize) -> Vec<&TrainRecord>
+// fn validate_ticket(ticket: &Ticket) -> Result<(), String>
 //
-// Collect into Vec<&TrainRecord>, sort by revenue() descending,
-// then take first n. Return as Vec.
+// Check these conditions — return Err with message if any fail:
+//   - passenger name empty     → "Ticket #{id}: passenger name is empty"
+//   - from == to               → "Ticket #{id}: origin and destination are the same"
+//   - price <= 0               → "Ticket #{id}: invalid price ₹{price:.2}"
+//   - price > 10000            → "Ticket #{id}: price ₹{price:.2} exceeds maximum"
+//   - All checks pass          → Ok(())
+//
+// WHY: Validation returns Result, not panic. Caller decides what to do.
 
 // =============================================
-// STEP 6: Implement `average_fare_by_route`
+// STEP 6: Implement `find_ticket`
 // =============================================
-// fn average_fare_by_route(records: &[TrainRecord]) -> Vec<(String, f64)>
+// fn find_ticket(tickets: &[Ticket], id: u32) -> Option<&Ticket>
 //
-// Group records by route ("{from} → {to}"), compute average fare per route.
-// Steps:
-//   1. Build HashMap<String, Vec<f64>> — route → list of fares
-//   2. Convert to Vec<(String, f64)> — route → average fare
-//   3. Sort by route name
-// This combines HashMap (Lesson 08) with iterators.
+// Search by id. Return Some or None. Never panic.
 
 // =============================================
-// STEP 7: Implement `reliability_report`
+// STEP 7: Implement `get_ticket_at`
 // =============================================
-// fn reliability_report(records: &[TrainRecord])
+// fn get_ticket_at(tickets: &[Ticket], index: usize) -> Option<&Ticket>
 //
-// Print trains in 3 categories based on on_time_percent:
-//   Excellent (>= 95%): filter and print
-//   Good (80–94.9%): filter and print
-//   Needs Improvement (< 80%): filter and print
-// Use .filter().for_each() for each category.
+// Use tickets.get(index) — NOT tickets[index].
+// .get() returns Option, [] panics on out of bounds.
+//
+// WHY: This is the #1 defensive pattern — safe indexing.
 
 // =============================================
-// STEP 8: Implement `total_stats`
+// STEP 8: Implement `calculate_refund`
 // =============================================
-// fn total_stats(records: &[TrainRecord])
+// fn calculate_refund(price: f64, percent: f64) -> Result<f64, String>
 //
-// Print these stats using iterator consumers:
-//   Total distance: .map(|r| r.distance_km).sum::<u32>()
-//   Total daily passengers: .map(|r| r.daily_passengers).sum::<u32>()
-//   Average on-time: .map(|r| r.on_time_percent).sum::<f64>() / count
-//   Most popular: .max_by_key(|r| r.daily_passengers)
-//   Longest route: .max_by_key(|r| r.distance_km)
+//   percent < 0 or > 100  → Err("Invalid refund percentage: {percent}")
+//   price < 0             → Err("Invalid price: {price}")
+//   otherwise             → Ok(price * percent / 100.0)
+//
+// WHY: Validate numeric inputs. Bad math doesn't panic but
+//      returns nonsense — Result catches that.
 
 // =============================================
-// STEP 9: Implement `search_and_transform`
+// STEP 9: Implement `process_booking`
 // =============================================
-// fn search_and_transform(records: &[TrainRecord], min_distance: u32) -> String
+// fn process_booking(inputs: &[(&str, &str, &str, &str, f64)]) -> (Vec<Ticket>, Vec<String>)
 //
-// One pipeline: filter by distance → sort by fare → number them → format → join
-//   1. Filter: keep records where distance_km >= min_distance
-//   2. Sort: by fare ascending (cheapest first)
-//   3. Enumerate + map: "1. Kovai Express (500 km) — ₹350.00"
-//   4. Collect and join with "\n"
+// Takes raw booking data: (passenger, from, to, class_str, price)
+// Returns: (valid_tickets, error_messages)
+//
+// For each input:
+//   1. Parse class_str with parse_ticket_class
+//      → If Err, push the error message into errors and skip this booking
+//   2. Create a Ticket (auto-incrementing id starting from 1)
+//   3. Validate with validate_ticket
+//      → If Err, push the error message into errors and skip
+//   4. If all passed, push ticket into valid_tickets
+//
+// NOTE: id increments for EVERY attempt, not just successful ones.
+//       So the first booking is #1, the second is #2, even if #1 failed.
+//
+// WHY: This is the capstone — combining Result, validation, and
+//      graceful error collection. No panics anywhere.
 
 // =============================================
 // STEP 10: Write `fn main()`
 // =============================================
 //
-// 1. Print "=== RAILWAY DATA PIPELINE ==="
-// 2. Build records with build_records()
-// 3. Print "--- Timetable ---" + format_timetable()
-// 4. Print "--- Top 3 Revenue Trains ---"
-//    Call top_revenue_trains(3), loop with enumerate, print revenue
-// 5. Print "--- Average Fare by Route ---"
-//    Call average_fare_by_route(), print each
-// 6. Print "--- Reliability Report ---"
-//    Call reliability_report()
-// 7. Print "--- Total Stats ---"
-//    Call total_stats()
-// 8. Print "--- Long-Distance Trains (>= 500 km), Cheapest First ---"
-//    Print search_and_transform(500)
+// 1. Print "=== RAILWAY TICKET VALIDATOR ==="
+//
+// 2. Define booking inputs:
+//   ("Giridhar", "Chennai", "Bangalore", "1A", 1250.00)     ← valid
+//   ("Priya", "Mumbai", "Delhi", "SL", 450.00)              ← valid
+//   ("", "Chennai", "Mumbai", "2A", 800.00)                 ← empty passenger
+//   ("Arjun", "Bangalore", "Bangalore", "GN", 200.00)       ← same from/to
+//   ("Meera", "Delhi", "Chennai", "XYZ", 500.00)            ← invalid class
+//   ("Ravi", "Chennai", "Kolkata", "1A", -100.00)           ← negative price
+//   ("Suresh", "Mumbai", "Chennai", "general", 350.00)      ← valid
+//   ("Anita", "Chennai", "Delhi", "first", 15000.00)        ← price too high
+//
+// 3. Call process_booking
+//
+// 4. Print "--- Booking Errors ---"
+//    Print each error with "  " indent
+//
+// 5. Print "--- Valid Tickets ---"
+//    Print each ticket with ticket.display()
+//
+// 6. Print "--- Safe Lookups ---"
+//    find_ticket for id 1 → print found info
+//    find_ticket for id 99 → print "Not found"
+//    get_ticket_at index 0 → print found info
+//    get_ticket_at index 99 → print "Not found (safe — no panic!)"
+//
+// 7. Print "--- Refund Calculations ---"
+//    calculate_refund(1250.0, 85.0) → print Ok result
+//    calculate_refund(1250.0, 150.0) → print Err
+//    calculate_refund(-500.0, 85.0) → print Err
 
 fn main() {
     // Your code here

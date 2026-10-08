@@ -1,91 +1,96 @@
 // =============================================================================
-// 🚂 EXERCISE: Railway Dispatch Simulator
+// Exercise: Train Lookup Service
 // =============================================================================
 //
-// Build an async railway dispatch system using Tokio. No real network calls —
-// use tokio::time::sleep to simulate delays.
+// Build a train lookup service with typed error handling using thiserror.
+// Each step builds on the previous one.
 //
-// Run with: cargo run
-// You'll see timing differences between sequential and concurrent execution.
+// Expected output:
 //
-// STEP 1: Define a `TrainUpdate` struct
-// ---------------------------------------------------------------------
-// Fields:
-//   - number: u32          (train number, e.g. 101)
-//   - name: String          (train name, e.g. "Eurostar")
-//   - status: String        (e.g. "On Time", "Delayed 5min")
-//   - timestamp: String     (when the update was fetched — use a simple
-//                            counter or "now" placeholder; no need for
-//                            real chrono timestamps)
+//   === TRAIN LOOKUP SERVICE ===
 //
-// Derive Debug and Clone.
+//   --- Successful Lookups ---
+//   Found: #12001 Rajdhani Express (130 km/h)
+//   Found: #12007 Shatabdi Express (150 km/h)
 //
+//   --- Error Cases ---
+//   Error: Train #99999 not found
+//   Error: Train name cannot be empty
+//   Error: Speed must be positive, got -50
 //
-// STEP 2: Implement `async fn fetch_train_status(number: u32, name: &str) -> TrainUpdate`
-// ---------------------------------------------------------------------
-// - Simulate an API delay with: tokio::time::sleep(Duration::from_millis(500)).await
-// - Return a TrainUpdate with:
-//     number: the input number
-//     name:   the input name (owned String)
-//     status: pick any status string (e.g. "On Time")
-//     timestamp: format!("t={number}") or any placeholder
-// - Print a message like: "📡 Fetched status for Train {number} ({name})"
+//   --- Parse from JSON ---
+//   Parsed: #12001 Rajdhani Express
+//   Parse error: JSON error: missing field `name`
+//
+//   --- Batch Lookup ---
+//     ✅ #12001 Rajdhani Express
+//     ❌ Train #99999 not found
+//     ✅ #12007 Shatabdi Express
+//     ❌ Train #55555 not found
+//   Results: 2 found, 2 errors
 //
 //
-// STEP 3: Implement `async fn fetch_all_sequential(trains: &[(u32, &str)]) -> Vec<TrainUpdate>`
-// ---------------------------------------------------------------------
-// - Loop through `trains` and call fetch_train_status for each, awaiting
-//   one at a time.
-// - Measure the total time with std::time::Instant::now() / .elapsed()
-// - Print the elapsed time at the end.
-// - Return the collected results.
+// STEP 1: Define `TrainError` enum using thiserror
+// -------------------------------------------------
+// Use #[derive(Debug, thiserror::Error)] and add these variants:
+//
+//   - NotFound(u32)
+//     Error message: "Train #{0} not found"
+//
+//   - EmptyName
+//     Error message: "Train name cannot be empty"
+//
+//   - InvalidSpeed(i32)
+//     Error message: "Speed must be positive, got {0}"
+//
+//   - Json(serde_json::Error)
+//     Error message: "JSON error: {0}"
+//     Use #[from] so serde_json::Error converts automatically with ?
 //
 //
-// STEP 4: Implement `async fn fetch_all_concurrent(trains: &[(u32, &str)]) -> Vec<TrainUpdate>`
-// ---------------------------------------------------------------------
-// - Fetch all trains concurrently. You can use:
-//     Option A: tokio::task::JoinSet — spawn each fetch, collect results
-//     Option B: tokio::join! — if you know the count at compile time
-//   JoinSet is recommended since the number of trains is dynamic.
-// - Measure and print elapsed time.
-// - Return the results.
-// - This should be significantly faster than sequential!
+// STEP 2: Define `Train` struct
+// ------------------------------
+// Fields: number (u32), name (String), speed_kmh (u32)
+// Derive: Debug, Clone, serde::Deserialize
+//
+// Implement:
+//   - Train::new(number, name, speed_kmh) -> Train
+//   - Train::display(&self) -> String
+//     Returns: "#{number} {name} ({speed_kmh} km/h)"
 //
 //
-// STEP 5: Implement `async fn monitor_with_timeout(number: u32, name: &str, timeout_ms: u64) -> Result<TrainUpdate, String>`
-// ---------------------------------------------------------------------
-// - Use tokio::time::timeout to wrap fetch_train_status with a deadline.
-// - If the fetch completes in time, return Ok(update).
-// - If it times out, return Err("⏰ Timeout fetching Train {number} ({name})".into())
-// - Hint: timeout returns Result<T, Elapsed>. Map the Err.
+// STEP 3: Implement `validate_train`
+// -----------------------------------
+// fn validate_train(name: &str, speed: i32) -> Result<(), TrainError>
+//
+//   - If name (after trimming) is empty → Err(TrainError::EmptyName)
+//   - If speed <= 0 → Err(TrainError::InvalidSpeed(speed))
+//   - Otherwise → Ok(())
 //
 //
-// STEP 6: Implement `async fn dispatch_updates(count: u32)`
-// ---------------------------------------------------------------------
-// - Create an mpsc channel: let (tx, mut rx) = tokio::sync::mpsc::channel(32);
-// - Spawn a producer task that:
-//     - Sends `count` TrainUpdate messages through the channel
-//     - Use train numbers 1..=count and made-up names
-//     - Sleep 200ms between each send to simulate staggered arrivals
-// - In the main flow (not spawned), receive messages from rx and print them.
-// - The loop ends when the sender is dropped and the channel closes.
+// STEP 4: Implement `find_train`
+// -------------------------------
+// fn find_train(trains: &[Train], number: u32) -> Result<&Train, TrainError>
+//
+// Search through the slice for a train with matching number.
+// Return TrainError::NotFound if not found.
 //
 //
-// STEP 7: Write the async main function
-// ---------------------------------------------------------------------
-// - Use #[tokio::main] on main.
-// - Define a list of trains: [(u32, &str)] — at least 4 trains with numbers and names.
-// - Call fetch_all_sequential and print results.
-// - Call fetch_all_concurrent and print results.
-// - Call monitor_with_timeout with a generous timeout (should succeed).
-// - Call monitor_with_timeout with a tiny timeout like 100ms (should fail since
-//   fetch takes 500ms).
-// - Call dispatch_updates(5).
-// - Print a summary at the end.
+// STEP 5: Implement `parse_train_json`
+// --------------------------------------
+// fn parse_train_json(json: &str) -> Result<Train, TrainError>
 //
-// =============================================================================
+// Use serde_json::from_str(json) with the ? operator.
+// The #[from] attribute on the Json variant makes the conversion automatic.
+//
+//
+// STEP 6: Write main()
+// ---------------------
+// - Create a vec of 3 trains: Rajdhani Express (#12001, 130 km/h),
+//   Duronto Express (#12004, 120 km/h), Shatabdi Express (#12007, 150 km/h)
+// - Do successful lookups for #12001 and #12007
+// - Test each error case: not found (#99999), empty name, invalid speed (-50)
+// - Parse valid JSON and invalid JSON (missing "name" field)
+// - Batch lookup: try [12001, 99999, 12007, 55555], count successes and errors
 
-fn main() {
-    // TODO: Replace with #[tokio::main] async fn main() and implement the steps above.
-    println!("Replace me with your async implementation!");
-}
+fn main() {}

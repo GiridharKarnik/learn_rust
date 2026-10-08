@@ -32,17 +32,18 @@ XX-lesson-name/
 | 05  | `05-enums-and-pattern-matching` | Enums & Pattern Matching |
 | 06  | `06-option-result-and-error-handling` | Option, Result & Error Handling |
 | 07  | `07-collections` | Vec & Slices |
-| 08  | `08-hashmaps` | HashMap |
-| 09  | `09-panics-and-defensive-programming` | Panics & Defensive Programming |
-| 10  | `10-iterators` | Iterators |
-| 11  | `11-traits-and-generics` | Traits |
-| 12  | `12-lifetimes` | Lifetimes |
-| 13  | `13-generics` | Generics |
-| 14  | `14-json-serde` | JSON Handling (serde) |
-| 15  | `15-error-handling-thiserror` | Error Handling (thiserror) |
-| 16  | `16-async-tokio` | Async Execution (tokio) |
-| 17  | `17-shared-state` | Shared State (Arc, Mutex) |
-| 18  | `18-sql-sqlx` | Compile-time SQL (sqlx) |
+| 08  | `08-tuples-and-ranges` | Tuples & Ranges |
+| 09  | `09-hashmaps` | HashMap |
+| 10  | `10-panics-and-defensive-programming` | Panics & Defensive Programming |
+| 11  | `11-iterators` | Iterators |
+| 12  | `12-traits-and-generics` | Traits |
+| 13  | `13-lifetimes` | Lifetimes |
+| 14  | `14-generics` | Generics |
+| 15  | `15-json-serde` | JSON Handling (serde) |
+| 16  | `16-error-handling-thiserror` | Error Handling (thiserror) |
+| 17  | `17-async-tokio` | Async Execution (tokio) |
+| 18  | `18-shared-state` | Shared State (Arc, Mutex) |
+| 19  | `19-sql-sqlx` | Compile-time SQL (sqlx) |
 
 ## Prerequisites
 

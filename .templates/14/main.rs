@@ -1,209 +1,208 @@
 // =============================================
-// EXERCISE 12: Railway API Data Handler
+// EXERCISE 14: Railway Query System
 // =============================================
 //
-// Build functions to serialize and deserialize railway data as JSON.
-// There is NO code provided — you write everything, including main().
+// Practice generics: generic functions, generic structs, trait bounds,
+// where clauses, and monomorphization.
 //
-// This exercises: serde, serde_json, Serialize, Deserialize, derive macros,
-// #[serde(tag)], #[serde(rename_all)], Option, enums, Vec, BTreeMap.
+// You know: variables, functions, ownership, structs, enums, Option, Result,
+// Vec, HashMap, iterators, panics, traits. Now add generics to your toolkit.
 //
 // Run with: cargo run
 //
 // Expected output:
 //
-//   === RAILWAY JSON DATA HANDLER ===
+//   === RAILWAY QUERY SYSTEM ===
 //
-//   --- Serialized JSON ---
-//   [
-//     {
-//       "number": 12001,
-//       "name": "Rajdhani Express",
-//       "from": "Chennai",
-//       "to": "New Delhi",
-//       "status": {
-//         "type": "OnTime"
-//       },
-//       "speedKmh": 130.0
-//     },
-//     {
-//       "number": 12007,
-//       "name": "Shatabdi Express",
-//       "from": "Chennai",
-//       "to": "Bangalore",
-//       "status": {
-//         "type": "Delayed",
-//         "minutes": 45
-//       },
-//       "speedKmh": 150.0
-//     },
-//     {
-//       "number": 12245,
-//       "name": "Duronto Express",
-//       "from": "Chennai",
-//       "to": "Mumbai",
-//       "status": {
-//         "type": "OnTime"
-//       },
-//       "speedKmh": null
-//     },
-//     {
-//       "number": 22501,
-//       "name": "Tejas Express",
-//       "from": "Chennai",
-//       "to": "Madurai",
-//       "status": {
-//         "type": "Cancelled",
-//         "reason": "Track maintenance"
-//       },
-//       "speedKmh": null
-//     }
-//   ]
+//   --- print_all: Trains ---
+//     [TRAIN] #12001 Rajdhani Express (130km/h)
+//     [TRAIN] #12007 Shatabdi Express (150km/h)
+//     [TRAIN] #20601 Vande Bharat Express (160km/h)
 //
-//   --- Deserialized Trains ---
-//     #12001 Rajdhani Express (OnTime)
-//     #12007 Shatabdi Express (Delayed { minutes: 45 })
-//     #12245 Duronto Express (OnTime)
-//     #22501 Tejas Express (Cancelled { reason: "Track maintenance" })
+//   --- print_all: Stations ---
+//     [STATION] Chennai Central [MAS] — 17 platforms
+//     [STATION] New Delhi [NDLS] — 16 platforms
+//     [STATION] Mumbai CST [CSMT] — 18 platforms
 //
-//   --- Delayed Trains ---
-//     Shatabdi Express — delayed by 45 minutes
+//   --- find_by_name ---
+//     Found train: [TRAIN] #20601 Vande Bharat Express (160km/h)
+//     Found station: [STATION] Mumbai CST [CSMT] — 18 platforms
+//     No route containing 'Kolkata'
 //
-//   --- Summary ---
-//   {
-//     "cancelled": 1,
-//     "delayed": 1,
-//     "on_time": 2,
-//     "total": 4
-//   }
+//   --- largest ---
+//     Fastest speed: 160km/h
+//     Most platforms: 18
 //
-//   --- Invalid JSON Test ---
-//     Error (expected): invalid type: map, expected a sequence at line 1 column 0
+//   --- Pair ---
+//     first: #12001 Rajdhani Express (130km/h)
+//     second: #20601 Vande Bharat Express (160km/h)
+//     after swap — first: #20601 Vande Bharat Express (160km/h)
 //
-//   --- Merge Two JSON Arrays ---
-//     Merged 4 trains from two JSON arrays:
-//     #12001 Rajdhani Express
-//     #12007 Shatabdi Express
-//     #12245 Duronto Express
-//     #22501 Tejas Express
+//   === DONE ===
+
+#[allow(unused_imports)]
+use std::fmt;
 
 // =============================================
-// STEP 1: Define the `TrainStatus` enum
+// Pre-provided: Displayable trait and data types
 // =============================================
-// Variants:
-//   OnTime                          — unit variant
-//   Delayed { minutes: u32 }        — struct variant (NOT tuple — needed for tagged serialization)
-//   Cancelled { reason: String }    — struct variant
-//
-// Derive: Serialize, Deserialize, Debug, Clone
-// Add:    #[serde(tag = "type")]    — internally tagged, like TS discriminated unions
-//
-// This makes OnTime serialize as: {"type":"OnTime"}
-// and Delayed as: {"type":"Delayed","minutes":45}
+// The following trait and structs are already implemented for you.
+// Read through them — they show the patterns you'll apply in your TODOs.
 
-// =============================================
-// STEP 2: Define the `Train` struct
-// =============================================
-// Fields:
-//   number: u32
-//   name: String
-//   from: String
-//   to: String
-//   status: TrainStatus
-//   speed_kmh: Option<f64>         — None becomes null in JSON
-//
-// Derive: Serialize, Deserialize, Debug, Clone
-// Add:    #[serde(rename_all = "camelCase")]
-//         This converts snake_case field names to camelCase in JSON.
-//         So speed_kmh becomes "speedKmh" in JSON output.
+trait Displayable {
+    fn display_line(&self) -> String;
+    fn display_type(&self) -> &str;
 
-// =============================================
-// STEP 3: Implement `serialize_trains`
-// =============================================
-// fn serialize_trains(trains: &[Train]) -> Result<String, String>
-//
-// Use serde_json::to_string_pretty(trains) to get formatted JSON.
-// Map the serde_json error to String using .map_err(|e| e.to_string()).
-
-// =============================================
-// STEP 4: Implement `deserialize_trains`
-// =============================================
-// fn deserialize_trains(json: &str) -> Result<Vec<Train>, String>
-//
-// Use serde_json::from_str(json) to parse JSON into Vec<Train>.
-// Map the error to String.
-
-// =============================================
-// STEP 5: Implement `find_delayed`
-// =============================================
-// fn find_delayed(trains: &[Train]) -> Vec<&Train>
-//
-// Filter trains where status is Delayed (any number of minutes).
-// Hint: use matches!(t.status, TrainStatus::Delayed { .. })
-
-// =============================================
-// STEP 6: Implement `to_summary_json`
-// =============================================
-// fn to_summary_json(trains: &[Train]) -> Result<String, String>
-//
-// Count trains by status: total, on_time, delayed, cancelled.
-// Store counts in a BTreeMap<&str, usize> (BTreeMap keeps keys sorted
-// so the JSON output is deterministic — HashMap would randomize key order).
-//
-// Keys: "total", "on_time", "delayed", "cancelled"
-// Serialize to pretty JSON and return.
-
-// =============================================
-// STEP 7: Implement `merge_json_trains`
-// =============================================
-// fn merge_json_trains(json1: &str, json2: &str) -> Result<String, String>
-//
-// 1. Deserialize both JSON strings into Vec<Train>
-// 2. Combine them (extend the first with the second)
-// 3. Serialize back to pretty JSON
-
-// =============================================
-// STEP 8: Write `fn main()`
-// =============================================
-//
-// 1. Print "=== RAILWAY JSON DATA HANDLER ==="
-//
-// 2. Create a Vec of 4 trains:
-//    - Train { number: 12001, name: "Rajdhani Express",  from: "Chennai", to: "New Delhi",
-//      status: TrainStatus::OnTime, speed_kmh: Some(130.0) }
-//    - Train { number: 12007, name: "Shatabdi Express",  from: "Chennai", to: "Bangalore",
-//      status: TrainStatus::Delayed { minutes: 45 }, speed_kmh: Some(150.0) }
-//    - Train { number: 12245, name: "Duronto Express",   from: "Chennai", to: "Mumbai",
-//      status: TrainStatus::OnTime, speed_kmh: None }
-//    - Train { number: 22501, name: "Tejas Express",     from: "Chennai", to: "Madurai",
-//      status: TrainStatus::Cancelled { reason: "Track maintenance".to_string() }, speed_kmh: None }
-//
-// 3. Print "\n--- Serialized JSON ---"
-//    Serialize trains, print the JSON.
-//
-// 4. Print "\n--- Deserialized Trains ---"
-//    Deserialize the JSON back. For each train print:
-//      "  #{number} {name} ({status:?})"
-//
-// 5. Print "\n--- Delayed Trains ---"
-//    Call find_delayed. For each delayed train print:
-//      "  {name} — delayed by {minutes} minutes"
-//    (Use if let TrainStatus::Delayed { minutes } = &train.status)
-//
-// 6. Print "\n--- Summary ---"
-//    Call to_summary_json, print the result.
-//
-// 7. Print "\n--- Invalid JSON Test ---"
-//    Try deserializing: r#"{"not valid"#
-//    Print:  "  Error (expected): {error_message}"
-//
-// 8. Print "\n--- Merge Two JSON Arrays ---"
-//    Serialize trains[..2] and trains[2..] into two separate JSON strings.
-//    Call merge_json_trains to combine them.
-//    Deserialize the merged result, print:
-//      "  Merged {count} trains from two JSON arrays:"
-//    Then for each: "  #{number} {name}"
-
-fn main() {
-    // Your code here
+    fn display_full(&self) -> String {
+        format!("[{}] {}", self.display_type(), self.display_line())
+    }
 }
+
+#[derive(Debug, Clone, PartialEq)]
+struct Train {
+    number: u32,
+    name: String,
+    speed_kmh: u32,
+}
+
+impl Displayable for Train {
+    fn display_line(&self) -> String {
+        format!("#{} {} ({}km/h)", self.number, self.name, self.speed_kmh)
+    }
+    fn display_type(&self) -> &str {
+        "TRAIN"
+    }
+}
+
+impl fmt::Display for Train {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "#{} {} ({}km/h)", self.number, self.name, self.speed_kmh)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct Station {
+    name: String,
+    code: String,
+    platforms: u8,
+}
+
+impl Displayable for Station {
+    fn display_line(&self) -> String {
+        format!("{} [{}] \u{2014} {} platforms", self.name, self.code, self.platforms)
+    }
+    fn display_type(&self) -> &str {
+        "STATION"
+    }
+}
+
+impl fmt::Display for Station {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} [{}]", self.name, self.code)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct Route {
+    from: String,
+    to: String,
+    distance_km: u32,
+    trains: Vec<String>,
+}
+
+impl Displayable for Route {
+    fn display_line(&self) -> String {
+        format!("{} \u{2192} {} ({}km)", self.from, self.to, self.distance_km)
+    }
+    fn display_type(&self) -> &str {
+        "ROUTE"
+    }
+}
+
+impl fmt::Display for Route {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} \u{2192} {} ({}km)", self.from, self.to, self.distance_km)
+    }
+}
+
+// =============================================
+// STEP 1: Write a generic function `print_all`
+// =============================================
+// fn print_all<T: Displayable>(items: &[T])
+//
+// For each item, print: "  {display_full}"   (four spaces indent)
+
+// =============================================
+// STEP 2: Write a generic function `find_by_name`
+// =============================================
+// fn find_by_name<'a, T: Displayable>(items: &'a [T], name: &str) -> Option<&'a T>
+//
+// Return the first item whose display_line() contains `name`.
+// Hint: items.iter().find(|item| item.display_line().contains(name))
+
+// =============================================
+// STEP 3: Write a generic function `largest`
+// =============================================
+// fn largest<T: PartialOrd>(list: &[T]) -> &T
+//
+// Return a reference to the largest item in the slice.
+// Hint: start with &list[0], iterate from list[1..], update if item > biggest.
+
+// =============================================
+// STEP 4: Define a generic struct `Pair<T>`
+// =============================================
+// struct Pair<T> { first: T, second: T }
+//
+// Implement a method: fn swap(self) -> Pair<T>
+// This consumes the Pair and returns a new one with first and second swapped.
+//
+// Add a trait bound so Display works: impl<T: fmt::Display> Pair<T>
+// (or split into two impl blocks — one for swap, one for Display methods)
+
+// =============================================
+// STEP 5: Write main()
+// =============================================
+//
+// 1. Print "=== RAILWAY QUERY SYSTEM ==="
+//
+// 2. Create a Vec of trains:
+//    Train { number: 12001, name: "Rajdhani Express",      speed_kmh: 130 }
+//    Train { number: 12007, name: "Shatabdi Express",      speed_kmh: 150 }
+//    Train { number: 20601, name: "Vande Bharat Express",  speed_kmh: 160 }
+//
+// 3. Create a Vec of stations:
+//    Station { name: "Chennai Central", code: "MAS",  platforms: 17 }
+//    Station { name: "New Delhi",       code: "NDLS", platforms: 16 }
+//    Station { name: "Mumbai CST",      code: "CSMT", platforms: 18 }
+//
+// 4. Create a Vec of routes:
+//    Route { from: "Chennai", to: "New Delhi",   distance_km: 2180, trains: vec![] }
+//    Route { from: "Chennai", to: "Mumbai",      distance_km: 1280, trains: vec![] }
+//    Route { from: "Chennai", to: "Bangalore",   distance_km: 350,  trains: vec![] }
+//
+// 5. Print "--- print_all: Trains ---" then call print_all(&trains)
+//
+// 6. Print "--- print_all: Stations ---" then call print_all(&stations)
+//
+// 7. Print "--- find_by_name ---"
+//    Search trains for "Vande"   — print "  Found train: {display_full}"
+//    Search stations for "Mumbai" — print "  Found station: {display_full}"
+//    Search routes for "Kolkata" — print "  No route containing 'Kolkata'"
+//    (Use find_by_name; for the not-found case use unwrap_or-style logic or a match)
+//
+// 8. Print "--- largest ---"
+//    Collect train speeds into a Vec<u32>: trains.iter().map(|t| t.speed_kmh).collect()
+//    Call largest(&speeds) and print "  Fastest speed: {n}km/h"
+//    Collect station platforms into a Vec<u8>: stations.iter().map(|s| s.platforms).collect()
+//    Call largest(&platforms) and print "  Most platforms: {n}"
+//
+// 9. Print "--- Pair ---"
+//    Create: Pair { first: trains[0].clone(), second: trains[2].clone() }
+//    Print "  first: {}" using Display (trains[0])
+//    Print "  second: {}" using Display (trains[2])
+//    Call .swap() on the pair
+//    Print "  after swap — first: {}" using Display (swapped.first)
+//
+// 10. Print "=== DONE ==="
+
+fn main() {}
